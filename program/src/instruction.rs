@@ -16,7 +16,7 @@ pub enum GovInstruction {
     ///
     /// Accounts expected:
     ///
-    /// 0. `[writable;Signer]` payer<AccountInfo>
+    /// 0. `[writable;Signer]` payer<AccountIcreate_accountnfo>
     /// 1. `[readonly;Signer]` authority<AccountInfo>
     /// 2. `[readonly]` realm<Account>
     /// 3. `[readonly]` realm_community_mint<spl_token::Mint>
@@ -55,7 +55,7 @@ impl GovInstruction {
 
 //helper functions to build up the instructions externally
 
-//prerequisites
+
 
 pub fn create_registrar(
     payer_pubkey: &Pubkey,
