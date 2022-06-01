@@ -15,13 +15,3 @@ impl ExchangeRateEntry {
             .len()
     }
 }
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn foo() {
-        let foo = 1;
-        assert_eq!(foo, 1);
-    }
-}

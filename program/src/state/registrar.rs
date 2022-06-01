@@ -25,15 +25,3 @@ impl Registrar {
             .len()
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::ExchangeRateEntry;
-    #[test]
-    fn bar() {
-        let foo = ExchangeRateEntry::default();
-        println!("foo{:?}", foo);
-        let bar = 4;
-        assert_eq!(bar, 4);
-    }
-}

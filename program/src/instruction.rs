@@ -5,6 +5,8 @@ use solana_program::{
     instruction::{AccountMeta, Instruction},
     msg,
     pubkey::Pubkey,
+    system_program,
+    sysvar::Sysvar,
 };
 
 use crate::{error::*, state::ExchangeRateEntry};
@@ -20,7 +22,8 @@ pub enum GovInstruction {
     /// 1. `[readonly;Signer]` authority<AccountInfo>
     /// 2. `[readonly]` realm<Account>
     /// 3. `[readonly]` realm_community_mint<spl_token::Mint>
-    /// 4. `[writable;PDA]` registrar<AccountInfo>
+    /// 4. `[writable;PDA]` registrar<AccountInfo
+    /// 5. `[readonly]` system_program
     CreateRegistrar {
         rate_decimals: u8,
         registrar_bump: u8,
@@ -55,30 +58,28 @@ impl GovInstruction {
 
 //helper functions to build up the instructions externally
 
-
-
 pub fn create_registrar(
-    payer_pubkey: &Pubkey,
-    authority_pubkey: &Pubkey,
-    realm_pubkey: &Pubkey,
-    community_mint_pubkey: &Pubkey,
+    payer: &Pubkey,
+    authority: &Pubkey,
+    realm: &Pubkey,
+    community_mint: &Pubkey,
     rate_decimals: u8,
+    registrar_pda: &Pubkey,
+    registrar_bump: u8,
 ) -> Instruction {
-    let registrar_seeds = &[realm_pubkey.as_ref()];
-    let (registrar_pubkey, bump) = Pubkey::find_program_address(registrar_seeds, &crate::id());
-
     let accounts = vec![
-        AccountMeta::new(*payer_pubkey, true),
-        AccountMeta::new_readonly(*authority_pubkey, false),
-        AccountMeta::new_readonly(*realm_pubkey, false),
-        AccountMeta::new_readonly(*community_mint_pubkey, false),
-        AccountMeta::new(registrar_pubkey, true),
+        AccountMeta::new(*payer, true),
+        AccountMeta::new(*authority, true),
+        AccountMeta::new_readonly(*realm, false),
+        AccountMeta::new_readonly(*community_mint, false),
+        AccountMeta::new(*registrar_pda, false),
+        AccountMeta::new_readonly(system_program::id(), false),
     ];
     Instruction::new_with_borsh(
         crate::id(),
         &GovInstruction::CreateRegistrar {
             rate_decimals,
-            registrar_bump: bump,
+            registrar_bump,
         },
         accounts,
     )

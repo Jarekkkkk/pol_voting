@@ -1,4 +1,5 @@
 use {
+    program::instruction,
     solana_program_test::BanksClient,
     solana_sdk::{
         hash::Hash,
@@ -10,42 +11,28 @@ use {
         transport::TransportError,
     },
     spl_token::{
-        id, instruction,
+        id, instruction as tokenInstruction,
         state::{Account, Mint},
     },
 };
 
-///Create 2 mint and vault
-pub async fn create_tokens_and_mint(
+//  ------- token_action -------
+pub async fn create_token_and_mint(
     banks_client: &mut BanksClient,
     payer: &Keypair,
     recent_blockhash: Hash,
     owner: &Pubkey,
+    mint: &Keypair,
+    decimals: u8,
+    vault: &Keypair,
 ) -> Result<(), TransportError> {
-    //five insstructions
-    // create mint, init mint, create vault, init vault, mint to vault
-    let mint_a = Keypair::new();
-    let vault_a = Keypair::new();
-    let mint_b = Keypair::new();
-    let vault_b = Keypair::new();
-
-    create_mint(banks_client, payer, recent_blockhash, &mint_a, owner, 6).await?;
-    create_mint(banks_client, payer, recent_blockhash, &mint_b, owner, 0).await?;
+    create_mint(banks_client, payer, recent_blockhash, mint, owner, decimals).await?;
     create_token_account(
         banks_client,
         payer,
         recent_blockhash,
-        &vault_a,
-        &mint_a.pubkey(),
-        owner,
-    )
-    .await?;
-    create_token_account(
-        banks_client,
-        payer,
-        recent_blockhash,
-        &vault_b,
-        &mint_b.pubkey(),
+        vault,
+        &mint.pubkey(),
         owner,
     )
     .await?;
@@ -72,7 +59,7 @@ pub async fn create_mint(
                 Mint::LEN as u64,
                 &id(),
             ),
-            instruction::initialize_mint(&id(), &pool_mint.pubkey(), manager, None, decimals)
+            tokenInstruction::initialize_mint(&id(), &pool_mint.pubkey(), manager, None, decimals)
                 .unwrap(),
         ],
         Some(&payer.pubkey()),
@@ -102,7 +89,8 @@ pub async fn create_token_account(
                 Account::LEN as u64,
                 &id(),
             ),
-            instruction::initialize_account(&id(), &account.pubkey(), pool_mint, owner).unwrap(),
+            tokenInstruction::initialize_account(&id(), &account.pubkey(), pool_mint, owner)
+                .unwrap(),
         ],
         Some(&payer.pubkey()),
         &[payer, account],
@@ -112,7 +100,35 @@ pub async fn create_token_account(
     Ok(())
 }
 
-//PDA
-pub async fn create_registrar() -> Result<(), TransportError> {
+//  ------- program_action -------
+pub async fn create_registrar(
+    banks_client: &mut BanksClient,
+    payer: &Keypair,
+    recent_blockhash: Hash,
+    realm: &Pubkey,
+    authority: &Pubkey,
+    community_mint_pubkey: &Pubkey,
+    rate_decimals: u8,
+) -> Result<(), TransportError> {
+    let registrar_seeds = &[realm.as_ref()];
+    let (registrar_pda, registrar_bump) =
+        Pubkey::find_program_address(registrar_seeds, &program::id());
+
+    let transaction = Transaction::new_signed_with_payer(
+        &[instruction::create_registrar(
+            &payer.pubkey(),
+            authority,
+            realm,
+            community_mint_pubkey,
+            rate_decimals,
+            &registrar_pda,
+            registrar_bump,
+        )],
+        Some(&payer.pubkey()),
+        &[payer],
+        recent_blockhash,
+    );
+    banks_client.process_transaction(transaction).await?;
+
     Ok(())
 }
