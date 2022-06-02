@@ -11,7 +11,7 @@ use program::entrypoint::process_instruction;
 async fn test() {
     //use program::instruction;
 
-    let mut pt = ProgramTest::new("program", program::id(), processor!(process_instruction));
+    let pt = ProgramTest::new("program", program::id(), processor!(process_instruction));
     //pt.set_compute_max_units(5_000); //per tx
 
     // === progrma_config ===
@@ -76,15 +76,16 @@ async fn test() {
 
     //exchange_vault_a
     //ATA simply is PDA derived from [owner,mint,token_program]
-    let seeds: &[&[_]] = &[
-        &registrar_pda.to_bytes().clone(),
-        &spl_token::id().to_bytes().clone(),
-        &mint_a.pubkey().to_bytes().clone(),
-    ];
+
     let exchange_vault_a_pda = spl_associated_token_account::get_associated_token_address(
         &registrar_pda,
         &mint_a.pubkey(),
     );
+    // let seeds: &[&[_]] = &[
+    //     &registrar_pda.to_bytes().clone(),
+    //     &spl_token::id().to_bytes().clone(),
+    //     &mint_a.pubkey().to_bytes().clone(),
+    // ];
     // let (exchange_vault_a_pda, _exchange_vault_a_bump) =
     //     Pubkey::find_program_address(seeds, &spl_associated_token_account::id());
 

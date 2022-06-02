@@ -11,12 +11,11 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-use std::any::type_name;
-
 use crate::{
     error::GovError,
     state::{ExchangeRateEntry, Registrar},
 };
+use std::ops::Not;
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use spl_associated_token_account::instruction as ata_instruction;
@@ -109,7 +108,7 @@ pub fn process(
     msg!("voting_mint Mint initialized");
 
     //logic
-    if er.rate <= 0 {
+    if (er.rate > 0).not() {
         return Err(GovError::InvalidRate.into());
     };
     // probably extend the funcionality using Pack tratit (?
