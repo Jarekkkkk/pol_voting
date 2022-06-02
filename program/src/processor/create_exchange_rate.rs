@@ -11,15 +11,20 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-use borsh::BorshDeserialize;
-use spl_associated_token_account::instruction::create_associated_token_account;
-use std::mem::size_of;
+use std::any::type_name;
 
-use crate::{error::GovError, state::*};
+use crate::{
+    error::GovError,
+    state::{ExchangeRateEntry, Registrar},
+};
+
+use borsh::{BorshDeserialize, BorshSerialize};
+use spl_associated_token_account::instruction as ata_instruction;
 
 pub fn process(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
+    voting_mint_bump: u8,
     idx: u16,
     er: ExchangeRateEntry, // use new_with_borsh to create ix by seriazling the obj with borsh
 ) -> ProgramResult {
@@ -33,7 +38,8 @@ pub fn process(
     let exchange_vault_account = next_account_info(account_info_iter)?;
     let voting_mint_account = next_account_info(account_info_iter)?;
     let token_program_account = next_account_info(account_info_iter)?;
-    let associated_token_program_account = next_account_info(account_info_iter)?;
+    let _system_program_account = next_account_info(account_info_iter)?;
+    let _associated_token_program_account = next_account_info(account_info_iter)?;
 
     if !authority_account.is_signer {
         return Err(ProgramError::MissingRequiredSignature);
@@ -42,6 +48,9 @@ pub fn process(
     if registrar_account.owner != program_id {
         return Err(ProgramError::IllegalOwner);
     }
+    if registrar_account.data_is_empty() {
+        return Err(ProgramError::UninitializedAccount);
+    }
     let registrar: Registrar = Registrar::try_from_slice(&registrar_account.try_borrow_data()?)?;
     if registrar.authority != *authority_account.key {
         let err = GovError::AuthorityMismatch;
@@ -49,55 +58,46 @@ pub fn process(
         return Err(err.into());
     }
 
-    let deposit_mint_data = deopsit_mint_account.data.borrow();
-    let deposit_mint = spl_token::state::Mint::unpack(&deposit_mint_data)?;
-
+    //build PDA
+    //1. exchange_vault(ATA)
     if !exchange_vault_account.data_is_empty() {
         Err(ProgramError::AccountAlreadyInitialized)?
     }
-    //pda is created inside the ix
-    let create_ev_ix = create_associated_token_account(
-        authority_account.key,
+    let create_ata_ix = ata_instruction::create_associated_token_account(
+        &authority_account.key,
         registrar_account.key,
-        deopsit_mint_account.key,
+        &deopsit_mint_account.key,
     );
-    invoke(&create_ev_ix, accounts)?;
+    //ata program do our favor by creating PDA and invoke_signed
+    invoke(&create_ata_ix, accounts)?;
     msg!("ExchangeVault ATA created");
 
+    //2.1 votingMint(Mint)
     if !voting_mint_account.data_is_empty() {
         Err(ProgramError::AccountAlreadyInitialized)?
     }
-
-    //1. create voting_mint as `PDA`
-    let (_pda, bump) = Pubkey::find_program_address(
-        &[
-            registrar_account.key.as_ref(),
-            deopsit_mint_account.key.as_ref(),
-            token_program_account.key.as_ref(),
-        ],
-        associated_token_program_account.key,
-    );
-
-    let associated_token_account_signer_seeds: &[&[_]] = &[
-        registrar_account.key.as_ref(),
-        deopsit_mint_account.key.as_ref(),
-        token_program_account.key.as_ref(),
-        &[bump],
-    ];
+    let mint_size = spl_token_2022::state::Mint::get_packed_len();
     let create_voting_mint_ix = system_instruction::create_account(
         authority_account.key,
         voting_mint_account.key,
-        Rent::get()?.minimum_balance(size_of::<spl_token::state::Mint>()),
-        (size_of::<spl_token::state::Mint>()) as u64,
-        registrar_account.key,
+        Rent::get()?.minimum_balance(mint_size),
+        mint_size as u64,
+        &spl_token::id(), //make spl owner to access the Mint data
     );
+    let signer_seeds: &[&[_]] = &[
+        &registrar_account.key.to_bytes(),
+        &deopsit_mint_account.key.to_bytes(),
+        &[voting_mint_bump],
+    ];
     invoke_signed(
         &create_voting_mint_ix,
-        accounts,
-        &[associated_token_account_signer_seeds],
+        &[authority_account.clone(), voting_mint_account.clone()],
+        &[signer_seeds],
     )?;
     msg!("voting_mint PDA created");
-    //2. init as Mint
+
+    let deposit_mint = spl_token::state::Mint::unpack(&deopsit_mint_account.data.borrow())?;
+    //2.2 init voting_mint as Mint
     let init_vm_mint_ix = spl_token::instruction::initialize_mint(
         token_program_account.key,
         voting_mint_account.key,
@@ -109,13 +109,16 @@ pub fn process(
     msg!("voting_mint Mint initialized");
 
     //logic
-    if !er.rate > 0 {
+    if er.rate <= 0 {
         return Err(GovError::InvalidRate.into());
     };
-    // probably extend the funcionality using Pack tratit (.?
-    let registrar_account_data = registrar_account.try_borrow_mut_data()?;
+    // probably extend the funcionality using Pack tratit (?
+    let mut registrar_account_data = registrar_account.try_borrow_mut_data()?;
     let mut registrar: Registrar = Registrar::try_from_slice(&registrar_account_data)?;
     registrar.rates[idx as usize] = er;
+
+    //either borsh::serialzie or core::slice::copy from slice
+    registrar.serialize(&mut *registrar_account_data)?;
 
     Ok(())
 }

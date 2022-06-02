@@ -5,8 +5,7 @@ use solana_program::{
     instruction::{AccountMeta, Instruction},
     msg,
     pubkey::Pubkey,
-    system_program,
-    sysvar::Sysvar,
+    system_program, sysvar,
 };
 
 use crate::{error::*, state::ExchangeRateEntry};
@@ -37,14 +36,19 @@ pub enum GovInstruction {
     /// Accounts expected:
     ///
     /// 0. `[signer]` authority<AccountInfo>
-    /// 1. `[readonly]` registrar<Registrar>
+    /// 1. `[writable]` registrar<Registrar>
     /// 2. `[readonly]` depositMint<Mint>
     /// 3. `[writable; PDA]` exchangeVault<ATA; ExchangeVault>
     /// 4. `[writable; PDA]` votingMint<Mint>
-    /// 5. `[]` system_program_acc
-    /// 6. `[]` token_program
+    /// 5. `[]` token_program
+    /// 6. `[]` system_program_acc
     /// 7. `[]` associated_token_program
-    CreateExchangeRate { idx: u16, er: ExchangeRateEntry },
+    /// 8. `[sysvar]` rent  
+    CreateExchangeRate {
+        voting_mint_bump: u8,
+        idx: u16,
+        er: ExchangeRateEntry,
+    },
 }
 
 impl GovInstruction {
@@ -80,6 +84,43 @@ pub fn create_registrar(
         &GovInstruction::CreateRegistrar {
             rate_decimals,
             registrar_bump,
+        },
+        accounts,
+    )
+}
+
+pub fn create_exchange_rate(
+    authority: &Pubkey,
+    registrar_pda: &Pubkey,
+    deposit_mint: &Pubkey,
+    exchange_vault_pda: &Pubkey,
+    voting_mint_pda: &Pubkey,
+    voting_mint_bump: u8,
+    idx: u16,
+    er: ExchangeRateEntry,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*authority, true),
+        AccountMeta::new(*registrar_pda, false),
+        AccountMeta::new_readonly(*deposit_mint, false),
+        AccountMeta::new(*exchange_vault_pda, false), //PDA + ATA of depositMint
+        AccountMeta::new(*voting_mint_pda, false),    //PDA to become Mint
+        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(system_program::id(), false),
+        AccountMeta::new_readonly(spl_associated_token_account::id(), false),
+        AccountMeta::new_readonly(sysvar::rent::id(), false),
+    ];
+
+    for (idx, account) in accounts.iter().enumerate() {
+        println!("{:?}:  pubkey{:?}", idx, account)
+    }
+
+    Instruction::new_with_borsh(
+        crate::id(),
+        &GovInstruction::CreateExchangeRate {
+            voting_mint_bump,
+            idx,
+            er,
         },
         accounts,
     )

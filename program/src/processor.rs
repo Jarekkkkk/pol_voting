@@ -18,9 +18,13 @@ pub fn process(
             msg!("Instruction: create registrar");
             create_registrar::process(program_id, accounts, rate_decimals, registrar_bump)
         }
-        GovInstruction::CreateExchangeRate { idx, er } => {
+        GovInstruction::CreateExchangeRate {
+            voting_mint_bump,
+            idx,
+            er,
+        } => {
             msg!("Instruction: create exchange_rate");
-            create_exchange_rate::process(program_id, accounts, idx, er)
+            create_exchange_rate::process(program_id, accounts, voting_mint_bump, idx, er)
         }
     }
 }

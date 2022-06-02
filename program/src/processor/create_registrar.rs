@@ -21,17 +21,18 @@ pub fn process(
     let account_info_iter = &mut accounts.iter();
 
     let payer_account = next_account_info(account_info_iter)?;
-    if !payer_account.is_signer {
-        return Err(ProgramError::MissingRequiredSignature);
-    }
     let authority_account = next_account_info(account_info_iter)?;
     let realm_account = next_account_info(account_info_iter)?; //this is still under unchecked
     let realm_community_mint_account = next_account_info(account_info_iter)?;
     let registrar_account = next_account_info(account_info_iter)?;
+    let _system_program = next_account_info(account_info_iter)?;
+
+    if !payer_account.is_signer {
+        return Err(ProgramError::MissingRequiredSignature);
+    }
     if !registrar_account.data_is_empty() {
         Err(ProgramError::AccountAlreadyInitialized)?
     }
-    let _system_program = next_account_info(account_info_iter)?;
 
     //new_state
     let new_registrar = Registrar {
@@ -54,9 +55,13 @@ pub fn process(
     );
 
     let signer_seeds: &[&[_]] = &[&realm_account.key.to_bytes(), &[registrar_bump]];
-    invoke_signed(&create_registrar_ix, accounts, &[signer_seeds])?;
+    invoke_signed(
+        &create_registrar_ix,
+        &[payer_account.clone(), registrar_account.clone()],
+        &[signer_seeds],
+    )?;
 
-    msg!("registrar PDA created ");
+    msg!("registrar PDA created");
 
     //udpate PDA
     registrar_account
