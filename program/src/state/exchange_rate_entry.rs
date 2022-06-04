@@ -1,5 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::pubkey::Pubkey;
+
+/// Exchange rate for an asset that can be used to mint voting rights
 #[derive(BorshDeserialize, BorshSerialize, Default, Clone, Copy, Debug)]
 pub struct ExchangeRateEntry {
     pub mint: Pubkey, //mint for this entry

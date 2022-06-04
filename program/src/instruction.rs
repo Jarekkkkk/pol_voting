@@ -43,11 +43,28 @@ pub enum GovInstruction {
     /// 5. `[]` token_program
     /// 6. `[]` system_program_acc
     /// 7. `[]` associated_token_program
-    /// 8. `[sysvar]` rent  
+    /// 8. `[sysvar]` rent: required when invoking token program
     CreateExchangeRate {
         voting_mint_bump: u8,
         idx: u16,
         er: ExchangeRateEntry,
+    },
+    /// Create and init 2 PDA (voter & voter_weight_record)
+    ///
+    /// Accounts expected:
+    ///
+    /// 0. `[signer]` payer
+    /// 1. `[signer]` authority
+    /// 2. `[readonly]` registrar
+    /// 3. `[writable; PDA]` voter<Voter>
+    /// 4. `[writable; PDA]` voter_weight_record<VoterWeightRecord>
+    /// 5. `[]` token_program
+    /// 6. `[]` system_program_acc
+    /// 7. `[]` associated_token_program
+    /// 8. `[sysvar]` rent
+    CreateVoter {
+        voter_bump: u8,
+        voter_weight_record_bump: u8,
     },
 }
 
@@ -61,7 +78,6 @@ impl GovInstruction {
 }
 
 //helper functions to build up the instructions externally
-
 pub fn create_registrar(
     payer: &Pubkey,
     authority: &Pubkey,

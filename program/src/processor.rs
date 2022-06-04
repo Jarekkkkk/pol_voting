@@ -3,6 +3,7 @@ use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg, 
 
 mod create_exchange_rate;
 mod create_registrar;
+mod create_voter;
 
 #[cfg_attr(feature = "no-entrypoint", allow(dead_code))]
 pub fn process(
@@ -25,6 +26,13 @@ pub fn process(
         } => {
             msg!("Instruction: create exchange_rate");
             create_exchange_rate::process(program_id, accounts, voting_mint_bump, idx, er)
+        }
+        GovInstruction::CreateVoter {
+            voter_bump,
+            voter_weight_record_bump,
+        } => {
+            msg!("Instruction: create voter");
+            create_voter::process(program_id, accounts, voter_bump, voter_weight_record_bump)
         }
     }
 }
