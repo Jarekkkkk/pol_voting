@@ -38,7 +38,7 @@ pub fn process(
     if !payer_account.is_signer && !authority_account.is_signer {
         return Err(ProgramError::MissingRequiredSignature);
     }
-    //no need of checking authority
+    //no need of checking authority for it is readonly
     if registrar_account.data_is_empty() {
         return Err(ProgramError::InvalidAccountData.into());
     }

@@ -9,6 +9,8 @@ pub enum GovError {
     InvalidRate,
     #[error("Authority Mismatch")]
     AuthorityMismatch,
+    #[error("Registrar Mismatch")]
+    RegistrarMismatch,
 }
 
 impl From<GovError> for ProgramError {

@@ -1,6 +1,7 @@
 use crate::instruction::GovInstruction;
 use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey};
 
+mod create_deposit;
 mod create_exchange_rate;
 mod create_registrar;
 mod create_voter;
@@ -33,6 +34,10 @@ pub fn process(
         } => {
             msg!("Instruction: create voter");
             create_voter::process(program_id, accounts, voter_bump, voter_weight_record_bump)
+        }
+        GovInstruction::CreateDeposit { kind, amount, days } => {
+            msg!("Instruction: create deposit");
+            create_deposit::process(program_id, accounts, kind, amount, days)
         }
     }
 }

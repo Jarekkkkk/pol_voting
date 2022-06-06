@@ -8,7 +8,10 @@ use solana_program::{
     system_program, sysvar,
 };
 
-use crate::{error::*, state::ExchangeRateEntry};
+use crate::{
+    error::*,
+    state::{ExchangeRateEntry, LockupKind},
+};
 
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
 pub enum GovInstruction {
@@ -65,6 +68,27 @@ pub enum GovInstruction {
     CreateVoter {
         voter_bump: u8,
         voter_weight_record_bump: u8,
+    },
+    /// Creates a new DepositEntry and updates it by transferring in tokens
+    ///
+    /// Accounts expected:
+    ///
+    /// 0. `[signer]` authority
+    /// 1. `[readable; PDA]` regitrar
+    /// 2. `[writable; PDA]` voter<Voter>
+    /// 3. `[readony]` deposit_mint<Mint>
+    /// 4. `[readonly]` voting_mint<Mint>
+    /// 5. `[writable]` deposit_token<Token>  valut of main progrm
+    /// 6. `[writable]` exchange_vault<ATA>
+    /// 7. `[writable]` voting_token<ATA>
+    /// 8. `[]` system_program
+    /// 9. `[]` token_program
+    /// 10. `[]` associated_token_program
+    /// 11. `[sysvar]` rent
+    CreateDeposit {
+        kind: LockupKind,
+        amount: u64,
+        days: i32,
     },
 }
 

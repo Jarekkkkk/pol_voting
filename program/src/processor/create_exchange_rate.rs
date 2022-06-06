@@ -33,7 +33,7 @@ pub fn process(
 
     let authority_account = next_account_info(account_info_iter)?;
     let registrar_account = next_account_info(account_info_iter)?;
-    let deopsit_mint_account = next_account_info(account_info_iter)?;
+    let deposit_mint_account = next_account_info(account_info_iter)?;
     let exchange_vault_account = next_account_info(account_info_iter)?;
     let voting_mint_account = next_account_info(account_info_iter)?;
     let token_program_account = next_account_info(account_info_iter)?;
@@ -65,9 +65,9 @@ pub fn process(
     let create_ata_ix = ata_instruction::create_associated_token_account(
         &authority_account.key,
         registrar_account.key,
-        &deopsit_mint_account.key,
+        &deposit_mint_account.key,
     );
-    //ata program do our favor by creating PDA and invoke_signed
+    //ata program do our favor by creating PDA and invoke_signed to init
     invoke(&create_ata_ix, accounts)?;
     msg!("ExchangeVault ATA created");
 
@@ -85,7 +85,7 @@ pub fn process(
     );
     let signer_seeds: &[&[_]] = &[
         &registrar_account.key.to_bytes(),
-        &deopsit_mint_account.key.to_bytes(),
+        &deposit_mint_account.key.to_bytes(),
         &[voting_mint_bump],
     ];
     invoke_signed(
@@ -95,7 +95,7 @@ pub fn process(
     )?;
     msg!("voting_mint PDA created");
 
-    let deposit_mint = spl_token::state::Mint::unpack(&deopsit_mint_account.data.borrow())?;
+    let deposit_mint = spl_token::state::Mint::unpack(&deposit_mint_account.data.borrow())?;
     //2.2 init voting_mint as Mint
     let init_vm_mint_ix = spl_token::instruction::initialize_mint(
         token_program_account.key,
