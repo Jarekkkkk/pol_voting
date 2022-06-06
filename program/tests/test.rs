@@ -74,12 +74,24 @@ async fn test() {
     let (voting_mint_a_pda, voting_mint_a_bump) =
         Pubkey::find_program_address(seeds, &program::id());
 
+    //voting_mint_b
+    let seeds: &[&[_]] = &[
+        &registrar_pda.to_bytes().clone(),
+        &mint_b.pubkey().to_bytes().clone(),
+    ];
+    let (voting_mint_b_pda, voting_mint_b_bump) =
+        Pubkey::find_program_address(seeds, &program::id());
+
     //exchange_vault_a
     //ATA simply is PDA derived from [owner,mint,token_program]
 
     let exchange_vault_a_pda = spl_associated_token_account::get_associated_token_address(
         &registrar_pda,
         &mint_a.pubkey(),
+    );
+    let exchange_vault_b_pda = spl_associated_token_account::get_associated_token_address(
+        &registrar_pda,
+        &mint_b.pubkey(),
     );
     // let seeds: &[&[_]] = &[
     //     &registrar_pda.to_bytes().clone(),
@@ -108,7 +120,7 @@ async fn test() {
     // no need to assign `exchange_vault_a_bump`,
     // since ATA program do us the favor for
     // creating PDA themselves
-    let er = program::state::ExchangeRateEntry {
+    let er_a = program::state::ExchangeRateEntry {
         mint: mint_a.pubkey(),
         rate: 10,
         decimals: 6,
@@ -124,7 +136,29 @@ async fn test() {
         &voting_mint_a_pda,
         voting_mint_a_bump,
         0,
-        er,
+        er_a,
+    )
+    .await
+    .unwrap();
+
+    // ------ create_exchange_rate B ------
+    let er_b = program::state::ExchangeRateEntry {
+        mint: mint_b.pubkey(),
+        rate: 1_000_000,
+        decimals: 0,
+    };
+    action::create_exchange_rate(
+        &mut banks_client,
+        &payer,
+        recent_blockhash,
+        &payer.pubkey(),
+        &registrar_pda,
+        &mint_b.pubkey(),
+        &exchange_vault_b_pda,
+        &voting_mint_b_pda,
+        voting_mint_b_bump,
+        1,
+        er_b,
     )
     .await
     .unwrap();

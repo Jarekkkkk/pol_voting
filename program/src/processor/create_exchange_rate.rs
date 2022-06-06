@@ -27,8 +27,6 @@ pub fn process(
     idx: u16,
     er: ExchangeRateEntry, // use new_with_borsh to create ix by seriazling the obj with borsh
 ) -> ProgramResult {
-    //require exchange rate > 0
-
     let account_info_iter = &mut accounts.iter();
 
     let authority_account = next_account_info(account_info_iter)?;
@@ -111,7 +109,6 @@ pub fn process(
     if (er.rate > 0).not() {
         return Err(GovError::InvalidRate.into());
     };
-    // probably extend the funcionality using Pack tratit (?
     let mut registrar_account_data = registrar_account.try_borrow_mut_data()?;
     let mut registrar: Registrar = Registrar::try_from_slice(&registrar_account_data)?;
     registrar.rates[idx as usize] = er;

@@ -1,9 +1,11 @@
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
+    clock::Clock,
     entrypoint::ProgramResult,
     program_error::ProgramError,
     program_pack::Pack,
     pubkey::Pubkey,
+    sysvar::Sysvar,
 };
 
 use spl_token::{
@@ -76,7 +78,7 @@ pub fn process(
         return Err(TokenError::MintMismatch.into());
     }
 
-    //Why no need to check the ATA,
+    //Wh no need to check the ATA,
     //since it is also the PDA as well
     let mut exchange_vault: Token =
         Token::unpack(&mut exchange_vault_account.try_borrow_mut_data()?)?;
@@ -97,6 +99,15 @@ pub fn process(
     }
 
     //Logic
+    //start time of lockup
+    let start_ts = Clock::get()?.unix_timestamp;
+
+    //create the deposit for deposit_mint in accounts arguments
+    let er_idx = registrar
+        .rates
+        .iter()
+        .position(|r| r.mint == *deposit_mint_account.key)
+        .ok_or(GovError::ExchangeRateEntryNotFound);
 
     Ok(())
 }

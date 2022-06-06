@@ -56,6 +56,7 @@ pub fn process(
     let new_voter_serialized_len = new_voter_serialized.len();
 
     //owner shuold become program_id
+    //discriminator would interact with Anchor program (?)
     let new_voter_weight_record = VoterWeightRecord {
         account_discriminator: VoterWeightRecord::ACCOUNT_DISCRIMINATOR,
         realm: registrar.realm,
@@ -98,8 +99,12 @@ pub fn process(
         &[authority_account.clone(), voter_account.clone()],
         &[voter_seeds],
     )?;
+    msg!("Voter PDA created");
 
-    msg!("create voter PDA");
+    voter_account
+        .try_borrow_mut_data()?
+        .copy_from_slice(&new_voter_serialized);
+    msg!("Voter PDA initialized");
 
     let create_voter_weight_record_ix = system_instruction::create_account(
         payer_account.key,
@@ -113,8 +118,12 @@ pub fn process(
         &[payer_account.clone(), voter_weight_record_account.clone()],
         &[voter_weight_record_seeds],
     )?;
+    msg!("Voter_weight_record PDA created");
 
-    msg!("create voter_weight_record PDA");
+    voter_weight_record_account
+        .try_borrow_mut_data()?
+        .copy_from_slice(&new_voter_weight_record_serialized);
+    msg!("Voter_weight_record PDA initialized");
 
     Ok(())
 }

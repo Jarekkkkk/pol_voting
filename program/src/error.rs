@@ -11,6 +11,8 @@ pub enum GovError {
     AuthorityMismatch,
     #[error("Registrar Mismatch")]
     RegistrarMismatch,
+    #[error("ExchangeRateEntry Not Found")]
+    ExchangeRateEntryNotFound,
 }
 
 impl From<GovError> for ProgramError {
