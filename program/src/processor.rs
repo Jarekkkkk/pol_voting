@@ -1,10 +1,13 @@
 use crate::instruction::GovInstruction;
-use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, borsh::try_from_slice_unchecked, entrypoint::ProgramResult, msg,
+    program_error::ProgramError, pubkey::Pubkey,
+};
 
 mod create_deposit;
 mod create_exchange_rate;
 mod create_registrar;
-mod create_voter;
+pub mod create_voter;
 
 #[cfg_attr(feature = "no-entrypoint", allow(dead_code))]
 pub fn process(
@@ -12,7 +15,9 @@ pub fn process(
     accounts: &[AccountInfo],
     instruction_data: &[u8],
 ) -> ProgramResult {
-    match GovInstruction::unpack(instruction_data)? {
+    let instruction: GovInstruction = try_from_slice_unchecked(instruction_data)
+        .map_err(|_| ProgramError::InvalidInstructionData)?;
+    match instruction {
         GovInstruction::CreateRegistrar {
             rate_decimals,
             registrar_bump,

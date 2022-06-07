@@ -163,3 +163,33 @@ pub async fn create_exchange_rate(
 
     Ok(())
 }
+
+pub async fn create_voter(
+    banks_client: &mut BanksClient,
+    payer: &Keypair,
+    recent_blockhash: Hash,
+    registrar_pda: &Pubkey,
+    voter_pda: &Pubkey,
+    voter_bump: u8,
+    voter_weight_record: &Pubkey,
+    voter_weight_record_bump: u8,
+) -> Result<(), TransportError> {
+    let transaction = Transaction::new_signed_with_payer(
+        &[instruction::create_voter(
+            &payer.pubkey(),
+            &payer.pubkey(),
+            registrar_pda,
+            voter_pda,
+            voter_bump,
+            voter_weight_record,
+            voter_weight_record_bump,
+        )],
+        Some(&payer.pubkey()),
+        &[payer],
+        recent_blockhash,
+    );
+
+    banks_client.process_transaction(transaction).await?;
+
+    Ok(())
+}

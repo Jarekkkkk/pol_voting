@@ -1,11 +1,11 @@
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
 //Account
 use crate::state::ExchangeRateEntry;
 
 //exchange rate for an asset that can mint the voting rights
-#[derive(Debug, BorshDeserialize, BorshSerialize, Default)]
+#[derive(Debug, BorshDeserialize, BorshSchema, BorshSerialize, Default, Copy, Clone)]
 pub struct Registrar {
     pub authority: Pubkey,            //set the role as authority
     pub realm: Pubkey,                // from random pubkey

@@ -61,8 +61,8 @@ pub enum GovInstruction {
     /// 2. `[readonly]` registrar
     /// 3. `[writable; PDA]` voter<Voter>
     /// 4. `[writable; PDA]` voter_weight_record<VoterWeightRecord>
-    /// 5. `[]` token_program
-    /// 6. `[]` system_program_acc
+    /// 5. `[]` system_program_acc
+    /// 6. `[]` token_program
     /// 7. `[]` associated_token_program
     /// 8. `[sysvar]` rent
     CreateVoter {
@@ -151,10 +151,6 @@ pub fn create_exchange_rate(
         AccountMeta::new_readonly(sysvar::rent::id(), false),
     ];
 
-    for (idx, account) in accounts.iter().enumerate() {
-        println!("{:?}:  pubkey{:?}", idx, account)
-    }
-
     Instruction::new_with_borsh(
         crate::id(),
         &GovInstruction::CreateExchangeRate {
@@ -164,4 +160,41 @@ pub fn create_exchange_rate(
         },
         accounts,
     )
+}
+
+pub fn create_voter(
+    payer: &Pubkey,
+    authority: &Pubkey,
+    registrar_pda: &Pubkey,
+    voter_pda: &Pubkey,
+    voter_bump: u8,
+    voter_weight_record: &Pubkey,
+    voter_weight_record_bump: u8,
+) -> Instruction {
+    let accounts = vec![
+        AccountMeta::new(*payer, true),
+        AccountMeta::new(*authority, true),
+        AccountMeta::new_readonly(*registrar_pda, false),
+        AccountMeta::new(*voter_pda, false),
+        AccountMeta::new(*voter_weight_record, false),
+        AccountMeta::new_readonly(system_program::id(), false),
+        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(spl_associated_token_account::id(), false),
+        AccountMeta::new_readonly(sysvar::rent::id(), false),
+    ];
+
+    for (i, val) in accounts.iter().enumerate() {
+        println!("acc:{}:  pubkey:{:?}", i, val);
+    }
+
+    let ix = Instruction::new_with_borsh(
+        crate::id(),
+        &GovInstruction::CreateVoter {
+            voter_bump,
+            voter_weight_record_bump,
+        },
+        accounts,
+    );
+    println!("ix {:?}", ix);
+    ix
 }

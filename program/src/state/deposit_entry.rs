@@ -1,9 +1,9 @@
 use crate::state::Lockup;
 
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 
 /// Bookkeeping for a single deposit for a given mint and lockup schedule.
-#[derive(BorshDeserialize, BorshSerialize, Default, Clone, Copy, Debug)]
+#[derive(BorshDeserialize, BorshSerialize, PartialEq, BorshSchema, Default, Copy, Clone, Debug)]
 pub struct DepositEntry {
     // True if the deposit entry is being used.
     pub is_used: bool,

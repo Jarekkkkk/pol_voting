@@ -50,7 +50,7 @@ pub fn process(
         registrar: *registrar_account.key,
         voter_bump,
         voter_weight_record_bump,
-        deposits: [DepositEntry::default(); 32],
+        deposits: [DepositEntry::default(); 10],
     };
     let new_voter_serialized = new_voter.try_to_vec()?;
     let new_voter_serialized_len = new_voter_serialized.len();
@@ -93,6 +93,7 @@ pub fn process(
         new_voter_serialized_len as u64,
         program_id,
     );
+    msg!("create voter ix done");
 
     invoke_signed(
         &create_voter_ix,

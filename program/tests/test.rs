@@ -63,10 +63,11 @@ async fn test() {
     // ------ ------
 
     // ------ PDA ------
+    //1. registrar
     let seeds: &[&[_]] = &[&realm.pubkey().to_bytes().clone()];
     let (registrar_pda, registrar_bump) = Pubkey::find_program_address(seeds, &program::id());
 
-    //voting_mint_a
+    //2. voting_mint_a
     let seeds: &[&[_]] = &[
         &registrar_pda.to_bytes().clone(),
         &mint_a.pubkey().to_bytes().clone(),
@@ -74,17 +75,19 @@ async fn test() {
     let (voting_mint_a_pda, voting_mint_a_bump) =
         Pubkey::find_program_address(seeds, &program::id());
 
-    //voting_mint_b
+    //3. voting_mint_b
     let seeds: &[&[_]] = &[
         &registrar_pda.to_bytes().clone(),
         &mint_b.pubkey().to_bytes().clone(),
     ];
     let (voting_mint_b_pda, voting_mint_b_bump) =
         Pubkey::find_program_address(seeds, &program::id());
+    //4. voter
+
+    //5. voter_weight_record
 
     //exchange_vault_a
     //ATA simply is PDA derived from [owner,mint,token_program]
-
     let exchange_vault_a_pda = spl_associated_token_account::get_associated_token_address(
         &registrar_pda,
         &mint_a.pubkey(),
@@ -162,4 +165,31 @@ async fn test() {
     )
     .await
     .unwrap();
+
+    // ------ create_voter ------
+
+    let (voter_pda, voter_bump) = Pubkey::find_program_address(
+        &[&registrar_pda.to_bytes(), &payer.pubkey().to_bytes()],
+        &program::id(),
+    );
+    let seeds: &[&[_]] = &[
+        &program::processor::create_voter::VOTER_WEIGHT_RECORD,
+        &registrar_pda.to_bytes(),
+        &payer.pubkey().to_bytes(),
+    ];
+    let (voter_weight_record, voter_weight_record_bump) =
+        Pubkey::find_program_address(seeds, &program::id());
+
+    action::create_voter(
+        &mut banks_client,
+        &payer,
+        recent_blockhash,
+        &registrar_pda,
+        &voter_pda,
+        voter_bump,
+        &voter_weight_record,
+        voter_weight_record_bump,
+    )
+    .await
+    .unwrap()
 }
