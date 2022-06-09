@@ -11,5 +11,5 @@ mod deposit_entry;
 pub use deposit_entry::DepositEntry;
 
 mod lockup;
-pub use lockup::{Lockup, LockupKind};
+pub use lockup::{Lockup, LockupKind, MAX_DAYS_LOCKED, SECS_PER_DAY};
 //logic first --> reprc(C), using Zeroable trait and sub-trait "POD" --> adding macro to write DRY

@@ -23,3 +23,14 @@ pub mod state;
 // @TODO_QUESTION Should I use declare_program! instead? Does it work with the `no-entrypoint` feature?
 // (Do I really need the `no-entrypoint` feature?)
 declare_id!("A8bkizaAC3EePjYJjVSzfsUpKqTGREpyb89eT1FJyrzn");
+
+//#[cfg(test)]
+mod tests {
+    #[test]
+    fn foo() {
+        let foo = 10 as u8;
+        let bar = foo.checked_sub(2);
+
+        assert_eq!(bar, Some(2));
+    }
+}

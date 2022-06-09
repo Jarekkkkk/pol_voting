@@ -1,10 +1,10 @@
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 
 /// Seconds in one day.
-pub const _SECS_PER_DAY: i64 = 86_400;
+pub const SECS_PER_DAY: i64 = 86_400;
 
 /// Maximum number of days one can lock for.
-pub const _MAX_DAYS_LOCKED: u64 = 2555;
+pub const MAX_DAYS_LOCKED: u64 = 2555;
 
 #[derive(BorshDeserialize, BorshSerialize, PartialEq, BorshSchema, Default, Copy, Clone, Debug)]
 pub struct Lockup {
@@ -19,8 +19,8 @@ pub struct Lockup {
 
 #[derive(BorshDeserialize, BorshSerialize, PartialEq, BorshSchema, Clone, Copy, Debug)]
 pub enum LockupKind {
-    Daily,
-    Cliff,
+    Daily, //linear rewards
+    Cliff, // perioduc rewards
 }
 
 impl Default for LockupKind {

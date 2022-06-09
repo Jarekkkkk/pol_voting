@@ -183,10 +183,6 @@ pub fn create_voter(
         AccountMeta::new_readonly(sysvar::rent::id(), false),
     ];
 
-    for (i, val) in accounts.iter().enumerate() {
-        println!("acc:{}:  pubkey:{:?}", i, val);
-    }
-
     let ix = Instruction::new_with_borsh(
         crate::id(),
         &GovInstruction::CreateVoter {
@@ -198,3 +194,5 @@ pub fn create_voter(
     println!("ix {:?}", ix);
     ix
 }
+
+//pub fn create_deposit()

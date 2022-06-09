@@ -1,8 +1,8 @@
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
-use solana_program::pubkey::Pubkey;
+use solana_program::{entrypoint::ProgramResult, program_error::ProgramError, pubkey::Pubkey};
 
 //Account
-use crate::state::ExchangeRateEntry;
+use crate::{error::GovError, state::ExchangeRateEntry};
 
 //exchange rate for an asset that can mint the voting rights
 #[derive(Debug, BorshDeserialize, BorshSchema, BorshSerialize, Default, Copy, Clone)]
@@ -23,5 +23,23 @@ impl Registrar {
             .try_to_vec()
             .expect("seriazlied length: Registrar")
             .len()
+    }
+    //convert the given amount into community-based currency
+    //update both
+    //  1: exchagne rate conversion
+    //  2: decimals conversion
+    pub fn convert(&self, er: &ExchangeRateEntry, amount: u64) -> Result<u64, ProgramError> {
+        if !(self.rate_decimals >= er.decimals) {
+            return Err(GovError::InvalidDecimals.into());
+        }
+
+        let decimals_diff = self.rate_decimals.checked_sub(er.decimals).unwrap();
+        let convert = amount
+            .checked_mul(er.rate)
+            .unwrap()
+            .checked_mul(10_u64.pow(decimals_diff.into()))
+            .unwrap();
+
+        Ok(convert)
     }
 }

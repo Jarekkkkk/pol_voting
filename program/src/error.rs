@@ -7,12 +7,18 @@ pub enum GovError {
     InvalidInstruction,
     #[error("Invalid Rate")]
     InvalidRate,
+    #[error("Invalid Decimals")]
+    InvalidDecimals,
     #[error("Authority Mismatch")]
     AuthorityMismatch,
     #[error("Registrar Mismatch")]
     RegistrarMismatch,
     #[error("ExchangeRateEntry Not Found")]
     ExchangeRateEntryNotFound,
+    #[error("DepositEntry Full")]
+    DepositEntryFull,
+    #[error("Invalid Deposit Id")]
+    InvalidDepositId,
 }
 
 impl From<GovError> for ProgramError {

@@ -44,7 +44,7 @@ async fn test() {
         recent_blockhash,
         &program::id(),
         &mint_a,
-        8,
+        6,
         &vault_a,
     )
     .await
@@ -125,7 +125,7 @@ async fn test() {
     // creating PDA themselves
     let er_a = program::state::ExchangeRateEntry {
         mint: mint_a.pubkey(),
-        rate: 10,
+        rate: 1,
         decimals: 6,
     };
     action::create_exchange_rate(
