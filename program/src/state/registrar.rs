@@ -1,5 +1,5 @@
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
-use solana_program::{entrypoint::ProgramResult, program_error::ProgramError, pubkey::Pubkey};
+use solana_program::{program_error::ProgramError, pubkey::Pubkey};
 
 //Account
 use crate::{error::GovError, state::ExchangeRateEntry};

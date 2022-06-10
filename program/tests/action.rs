@@ -11,7 +11,7 @@ use {
         transport::TransportError,
     },
     spl_token::{
-        id, instruction as tokenInstruction,
+        instruction as tokenInstruction,
         state::{Account, Mint},
     },
 };
@@ -57,10 +57,16 @@ pub async fn create_mint(
                 &pool_mint.pubkey(),
                 mint_rent,
                 Mint::LEN as u64,
-                &id(),
+                &spl_token::id(),
             ),
-            tokenInstruction::initialize_mint(&id(), &pool_mint.pubkey(), manager, None, decimals)
-                .unwrap(),
+            tokenInstruction::initialize_mint(
+                &spl_token::id(),
+                &pool_mint.pubkey(),
+                manager,
+                None,
+                decimals,
+            )
+            .unwrap(),
         ],
         Some(&payer.pubkey()),
         &[payer, pool_mint],
@@ -87,10 +93,15 @@ pub async fn create_token_account(
                 &account.pubkey(),
                 account_rent,
                 Account::LEN as u64,
-                &id(),
+                &spl_token::id(),
             ),
-            tokenInstruction::initialize_account(&id(), &account.pubkey(), pool_mint, owner)
-                .unwrap(),
+            tokenInstruction::initialize_account(
+                &spl_token::id(),
+                &account.pubkey(),
+                pool_mint,
+                owner,
+            )
+            .unwrap(),
         ],
         Some(&payer.pubkey()),
         &[payer, account],
@@ -190,6 +201,45 @@ pub async fn create_voter(
     );
 
     banks_client.process_transaction(transaction).await?;
+
+    Ok(())
+}
+
+pub async fn create_deposit(
+    banks_client: &mut BanksClient,
+    payer: &Keypair,
+    recent_blockhash: Hash,
+    registrar_pda: &Pubkey,
+    voter_pda: &Pubkey,
+    deposit_mint: &Pubkey,
+    voting_mint_pda: &Pubkey,
+    deposit_token: &Pubkey,
+    exchange_vault_pda: &Pubkey,
+    voting_token: &Pubkey,
+    kind: program::state::LockupKind,
+    amount: u64,
+    days: i32,
+) -> Result<(), TransportError> {
+    let tx = Transaction::new_signed_with_payer(
+        &[instruction::create_deposit(
+            &payer.pubkey(),
+            registrar_pda,
+            voter_pda,
+            deposit_mint,
+            voting_mint_pda,
+            deposit_token,
+            exchange_vault_pda,
+            voting_token,
+            kind,
+            amount,
+            days,
+        )],
+        Some(&payer.pubkey()),
+        &[payer],
+        recent_blockhash,
+    );
+
+    banks_client.process_transaction(tx).await?;
 
     Ok(())
 }

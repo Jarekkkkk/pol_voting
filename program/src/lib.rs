@@ -24,9 +24,8 @@ pub mod state;
 // (Do I really need the `no-entrypoint` feature?)
 declare_id!("A8bkizaAC3EePjYJjVSzfsUpKqTGREpyb89eT1FJyrzn");
 
-//#[cfg(test)]
+#[cfg(test)]
 mod tests {
-    #[test]
     fn foo() {
         let foo = 10 as u8;
         let bar = foo.checked_sub(2);

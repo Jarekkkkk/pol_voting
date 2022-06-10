@@ -10,17 +10,14 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-use spl_token::{
-    error::TokenError,
-    state::{Account as Token, Mint},
-};
+use spl_token::{error::TokenError, state::Account as Token};
 
 use crate::{
     error::GovError,
     state::{Lockup, LockupKind, Registrar, Voter, SECS_PER_DAY},
 };
 
-use borsh::{BorshDeserialize, BorshSerialize};
+use borsh::BorshDeserialize;
 
 pub fn process(
     program_id: &Pubkey,
@@ -29,6 +26,7 @@ pub fn process(
     amount: u64,
     days: i32,
 ) -> ProgramResult {
+    msg!("foo");
     let account_info_iter = &mut accounts.iter();
 
     //customized
@@ -53,7 +51,6 @@ pub fn process(
     }
 
     let registrar: Registrar = Registrar::try_from_slice(&registrar_account.try_borrow_data()?)?;
-
     let mut voter: Voter = Voter::try_from_slice(&mut voter_account.try_borrow_mut_data()?)?;
     if voter.authority != *authority_account.key {
         return Err(GovError::AuthorityMismatch.into());
@@ -61,10 +58,6 @@ pub fn process(
     if voter.registrar != *registrar_account.key {
         return Err(GovError::RegistrarMismatch.into());
     }
-
-    let deposit_mint: Mint = Mint::unpack(&deposit_mint_account.try_borrow_data()?)?;
-
-    let mut voting_mint: Mint = Mint::unpack(&mut voting_mint_account.try_borrow_mut_data()?)?;
     let voting_mint_seeds: &[&[_]] = &[
         &registrar_account.key.to_bytes(),
         &deposit_mint_account.key.to_bytes(),
@@ -73,17 +66,13 @@ pub fn process(
     if voting_mint_account.key != &voting_mint_pda {
         return Err(ProgramError::InvalidSeeds);
     }
-
-    let mut deposit_token: Token =
-        Token::unpack(&mut deposit_token_account.try_borrow_mut_data()?)?;
+    let deposit_token: Token = Token::unpack(&deposit_token_account.try_borrow_data()?)?;
     if deposit_token.mint != *deposit_mint_account.key {
         return Err(TokenError::MintMismatch.into());
     }
-
     //Wh no need to check the ATA,
     //since it is also the PDA as well
-    let mut exchange_vault: Token =
-        Token::unpack(&mut exchange_vault_account.try_borrow_mut_data()?)?;
+    let exchange_vault: Token = Token::unpack(&exchange_vault_account.try_borrow_data()?)?;
     if exchange_vault.owner != *registrar_account.key {
         return Err(TokenError::OwnerMismatch.into());
     }
@@ -92,13 +81,24 @@ pub fn process(
     }
 
     //add ifelse statement to create it when non-exist, currently assume it is created
-    let mut voting_token = Token::unpack(&mut voting_token_account.try_borrow_mut_data()?)?;
+    if voting_token_account.data_is_empty() {
+        //PDA of single voter
+        let create_voting_token_ix =
+            spl_associated_token_account::instruction::create_associated_token_account(
+                &authority_account.key,
+                &authority_account.key,
+                &voting_mint_pda,
+            );
+        invoke(&create_voting_token_ix, accounts)?;
+        msg!("Voting token ATA created")
+    }
+    let voting_token = Token::unpack(&voting_token_account.try_borrow_data()?)?;
     if voting_token.owner != *authority_account.key {
         return Err(TokenError::OwnerMismatch.into());
     }
     if voting_token.mint != *voting_mint_account.key {
         return Err(TokenError::MintMismatch.into());
-    }
+    };
 
     //Logic
     //start time of lockup
@@ -131,9 +131,10 @@ pub fn process(
         padding: [0_u8; 16],
     };
 
-    //update
+    // ------ Update -------
     let update_idx = free_deposit_er_idx;
     // update deposit_er in voter
+
     let amount_scaled = {
         let er_idx = registrar
             .rates
@@ -145,14 +146,15 @@ pub fn process(
         registrar.convert(&er, amount)?
     };
 
-    if !(update_idx < voter.deposits.len()) {
+    if !(voter.deposits.len() > update_idx) {
         return Err(GovError::InvalidDepositId.into());
     }
     let d_er = &mut voter.deposits[update_idx];
     d_er.amount_deposited += amount; //pure deposit
     d_er.amount_deposited += amount_scaled; //converted deposit
+                                            // transfer the token to the registrar ( from deposit_token into er_vault_a)
 
-    // transfer the token to the registrar ( from deposit_token into er_vault_a)
+    //exceed the heap
     let transfer_ix = spl_token::instruction::transfer(
         &spl_token::id(),
         deposit_token_account.key,

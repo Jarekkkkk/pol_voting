@@ -183,16 +183,49 @@ pub fn create_voter(
         AccountMeta::new_readonly(sysvar::rent::id(), false),
     ];
 
-    let ix = Instruction::new_with_borsh(
+    Instruction::new_with_borsh(
         crate::id(),
         &GovInstruction::CreateVoter {
             voter_bump,
             voter_weight_record_bump,
         },
         accounts,
-    );
-    println!("ix {:?}", ix);
-    ix
+    )
 }
 
-//pub fn create_deposit()
+pub fn create_deposit(
+    authority: &Pubkey,
+    registrar_pda: &Pubkey,
+    voter: &Pubkey,
+    deposit_mint: &Pubkey,
+    voting_mint_pda: &Pubkey,
+    deposit_token: &Pubkey,
+    exchange_vault_pda: &Pubkey,
+    voting_token: &Pubkey,
+    kind: LockupKind,
+    amount: u64,
+    days: i32,
+) -> Instruction {
+    //notice that some accounts reuqire become writable for CPI invoke
+    let accounts = vec![
+        AccountMeta::new(*authority, true),
+        AccountMeta::new_readonly(*registrar_pda, false),
+        AccountMeta::new(*voter, false),
+        AccountMeta::new_readonly(*deposit_mint, false),
+        AccountMeta::new_readonly(*voting_mint_pda, false),
+        AccountMeta::new(*deposit_token, false),
+        AccountMeta::new(*exchange_vault_pda, false),
+        //PDA be created
+        AccountMeta::new(*voting_token, false),
+        AccountMeta::new_readonly(system_program::id(), false),
+        AccountMeta::new_readonly(spl_token::id(), false),
+        AccountMeta::new_readonly(spl_associated_token_account::id(), false),
+        AccountMeta::new_readonly(sysvar::rent::id(), false),
+    ];
+
+    Instruction::new_with_borsh(
+        crate::id(),
+        &GovInstruction::CreateDeposit { kind, amount, days },
+        accounts,
+    )
+}
