@@ -42,7 +42,7 @@ async fn test() {
         &mut banks_client,
         &payer,
         recent_blockhash,
-        &program::id(), //does this owner represent
+        &payer.pubkey(), //mint authority & token holder
         &mint_a,
         6,
         &vault_a,
@@ -213,4 +213,20 @@ async fn test() {
     )
     .await
     .unwrap();
+    action::update_deposit(
+        &mut banks_client,
+        &payer,
+        recent_blockhash,
+        &registrar_pda,
+        &voter_pda,
+        &mint_a.pubkey(),
+        &voting_mint_a_pda,
+        &vault_a.pubkey(),
+        &exchange_vault_a_pda,
+        &voting_token_pda,
+        0,
+        10,
+    )
+    .await
+    .unwrap()
 }

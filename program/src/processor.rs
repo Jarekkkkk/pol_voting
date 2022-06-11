@@ -8,6 +8,7 @@ mod create_deposit;
 mod create_exchange_rate;
 mod create_registrar;
 pub mod create_voter;
+mod update_deposit;
 
 #[cfg_attr(feature = "no-entrypoint", allow(dead_code))]
 pub fn process(
@@ -43,6 +44,10 @@ pub fn process(
         GovInstruction::CreateDeposit { kind, amount, days } => {
             msg!("Instruction: create deposit");
             create_deposit::process(program_id, accounts, kind, amount, days)
+        }
+        GovInstruction::UpdateDeposit { update_idx, amount } => {
+            msg!("Instruction: update deposit");
+            update_deposit::process(program_id, accounts, update_idx, amount)
         }
     }
 }

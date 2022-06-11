@@ -243,3 +243,40 @@ pub async fn create_deposit(
 
     Ok(())
 }
+
+pub async fn update_deposit(
+    banks_client: &mut BanksClient,
+    payer: &Keypair,
+    recent_blockhash: Hash,
+    registrar_pda: &Pubkey,
+    voter_pda: &Pubkey,
+    deposit_mint: &Pubkey,
+    voting_mint_pda: &Pubkey,
+    deposit_token: &Pubkey,
+    exchange_vault_pda: &Pubkey,
+    voting_token: &Pubkey,
+    update_idx: u8,
+    amount: u64,
+) -> Result<(), TransportError> {
+    let tx = Transaction::new_signed_with_payer(
+        &[instruction::update_deposit(
+            &payer.pubkey(),
+            registrar_pda,
+            voter_pda,
+            deposit_mint,
+            voting_mint_pda,
+            deposit_token,
+            exchange_vault_pda,
+            voting_token,
+            update_idx,
+            amount,
+        )],
+        Some(&payer.pubkey()),
+        &[payer],
+        recent_blockhash,
+    );
+
+    banks_client.process_transaction(tx).await?;
+
+    Ok(())
+}
