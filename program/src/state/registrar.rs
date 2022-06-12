@@ -5,7 +5,7 @@ use solana_program::{program_error::ProgramError, pubkey::Pubkey};
 use crate::{error::GovError, state::ExchangeRateEntry};
 
 //exchange rate for an asset that can mint the voting rights
-#[derive(Debug, BorshDeserialize, BorshSchema, BorshSerialize, Default, Copy, Clone)]
+#[derive(Debug, BorshDeserialize, BorshSchema, BorshSerialize, Default, Copy, Clone, PartialEq)]
 pub struct Registrar {
     pub authority: Pubkey,            //set the role as authority
     pub realm: Pubkey,                // from random pubkey
@@ -18,12 +18,6 @@ pub struct Registrar {
 }
 
 impl Registrar {
-    pub fn serialized_size() -> usize {
-        Self::default()
-            .try_to_vec()
-            .expect("seriazlied length: Registrar")
-            .len()
-    }
     //convert the given amount into community-based currency
     //update both
     //  1: exchagne rate conversion

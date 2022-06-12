@@ -17,6 +17,7 @@ mod error;
 pub mod instruction;
 pub mod processor;
 pub mod state;
+pub mod utils;
 
 // @TODO_QUESTION Is possible to read it from "../keypairs/program-pubkey"?
 //
