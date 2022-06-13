@@ -2,7 +2,7 @@ use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use solana_program::{program_error::ProgramError, pubkey::Pubkey};
 
 //Account
-use crate::{error::GovError, state::ExchangeRateEntry};
+use crate::{error::GovError, state::ExchangeRateEntry, utils::account_info::Acc};
 
 //exchange rate for an asset that can mint the voting rights
 #[derive(Debug, BorshDeserialize, BorshSchema, BorshSerialize, Default, Copy, Clone, PartialEq)]
@@ -16,6 +16,8 @@ pub struct Registrar {
 
     pub rate_decimals: u8, // The decimals to use when converting deposits into a common currency.
 }
+
+impl Acc for Registrar {}
 
 impl Registrar {
     //convert the given amount into community-based currency

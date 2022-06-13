@@ -11,7 +11,10 @@ use solana_program::{
 
 use borsh::BorshSerialize;
 
-use crate::state::{ExchangeRateEntry, Registrar};
+use crate::{
+    state::{ExchangeRateEntry, Registrar},
+    utils::account_info::create_and_serialize_account_signed,
+};
 pub fn process(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
@@ -30,11 +33,7 @@ pub fn process(
     if !payer_account.is_signer {
         return Err(ProgramError::MissingRequiredSignature);
     }
-    if !registrar_account.data_is_empty() {
-        Err(ProgramError::AccountAlreadyInitialized)?
-    }
 
-    //new_state
     let new_registrar = Registrar {
         authority: *authority_account.key,
         realm: *realm_account.key,
@@ -43,32 +42,16 @@ pub fn process(
         rates: [ExchangeRateEntry::default(), ExchangeRateEntry::default()],
         rate_decimals,
     };
-    let new_registrar_serialized = new_registrar.try_to_vec()?;
-    let registrar_size = new_registrar_serialized.len();
 
-    let create_registrar_ix = system_instruction::create_account(
-        payer_account.key,
-        registrar_account.key,
-        Rent::get()?.minimum_balance(registrar_size),
-        registrar_size as u64,
+    let seeds: &[&[_]] = &[&realm_account.key.to_bytes()];
+
+    create_and_serialize_account_signed(
+        registrar_account,
+        &new_registrar,
+        payer_account,
         program_id,
+        seeds,
     );
-
-    let signer_seeds: &[&[_]] = &[&realm_account.key.to_bytes(), &[registrar_bump]];
-    invoke_signed(
-        &create_registrar_ix,
-        &[payer_account.clone(), registrar_account.clone()],
-        &[signer_seeds],
-    )?;
-
-    msg!("registrar PDA created");
-
-    //udpate PDA
-    registrar_account
-        .try_borrow_mut_data()?
-        .copy_from_slice(&new_registrar_serialized);
-
-    msg!("Registrar PDA initialized");
 
     Ok(())
 }
