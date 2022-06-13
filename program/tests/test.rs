@@ -8,33 +8,8 @@ use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer, transaction
 use program::entrypoint::process_instruction;
 
 #[tokio::test]
+
 async fn test() {
-    let pt = ProgramTest::new("program", program::id(), processor!(process_instruction));
-    let (mut banks_client, payer, recent_blockhash) = pt.start().await;
-
-    //see whether we could create the PDA whose owner is created program, to test the DOS attack
-
-    let size = 50;
-    let rent = banks_client.get_rent().await.unwrap().minimum_balance(size);
-
-    let seeds: &[&[_]] = &[&b"Jarek".clone()];
-    let account = Pubkey::find_program_address(seeds, &program::id());
-
-    // ------ it seems like we are unable to create PDA off-chain ------
-    // so what is the reason to check the lamports of PDA
-    // someone can perform DOS attack by executing create_pda ix twice
-
-    let tx = Transaction::new_signed_with_payer(
-        &[ix],
-        Some(&payer.pubkey()),
-        &[&payer],
-        recent_blockhash,
-    );
-
-    banks_client.process_transaction(tx).await.unwrap();
-}
-
-async fn _test() {
     //use program::instruction;
 
     let pt = ProgramTest::new("program", program::id(), processor!(process_instruction));

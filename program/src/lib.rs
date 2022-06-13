@@ -27,10 +27,23 @@ declare_id!("A8bkizaAC3EePjYJjVSzfsUpKqTGREpyb89eT1FJyrzn");
 
 #[cfg(test)]
 mod tests {
-    fn foo() {
-        let foo = 10 as u8;
-        let bar = foo.checked_sub(2);
+    use super::*;
 
-        assert_eq!(bar, Some(2));
+    fn two_ways_serialization() {
+        use borsh::BorshSerialize;
+        use state::Registrar;
+
+        let reg = Registrar::default();
+        let seri = reg.try_to_vec().unwrap();
+        //const SIZE: usize = 180;
+
+        let mut buffer_1: Vec<u8> = vec![0; 180];
+        let mut buffer_2: Vec<u8> = Vec::new();
+
+        buffer_1.copy_from_slice(&seri); //space require identical
+        reg.serialize(&mut buffer_2).expect("seri err");
+
+        assert_eq!(buffer_1, buffer_2);
+        assert_eq!(buffer_1.len(), buffer_2.len());
     }
 }
