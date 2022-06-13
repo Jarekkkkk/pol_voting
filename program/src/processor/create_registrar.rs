@@ -1,15 +1,9 @@
 use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
-    msg,
-    program::invoke_signed,
     program_error::ProgramError,
     pubkey::Pubkey,
-    system_instruction,
-    sysvar::{rent::Rent, Sysvar},
 };
-
-use borsh::BorshSerialize;
 
 use crate::{
     state::{ExchangeRateEntry, Registrar},
@@ -23,12 +17,12 @@ pub fn process(
 ) -> ProgramResult {
     let account_info_iter = &mut accounts.iter();
 
-    let payer_account = next_account_info(account_info_iter)?;
-    let authority_account = next_account_info(account_info_iter)?;
-    let realm_account = next_account_info(account_info_iter)?; //this is still under unchecked
-    let realm_community_mint_account = next_account_info(account_info_iter)?;
-    let registrar_account = next_account_info(account_info_iter)?;
-    let _system_program = next_account_info(account_info_iter)?;
+    let payer_account = next_account_info(account_info_iter)?; //.0
+    let authority_account = next_account_info(account_info_iter)?; //.1
+    let realm_account = next_account_info(account_info_iter)?; //.2 - this is still under unchecked
+    let realm_community_mint_account = next_account_info(account_info_iter)?; //.3
+    let registrar_account = next_account_info(account_info_iter)?; //.4
+    let _system_program = next_account_info(account_info_iter)?; //.5
 
     if !payer_account.is_signer {
         return Err(ProgramError::MissingRequiredSignature);
@@ -51,7 +45,7 @@ pub fn process(
         payer_account,
         program_id,
         seeds,
-    );
+    )?;
 
     Ok(())
 }

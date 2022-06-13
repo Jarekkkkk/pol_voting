@@ -15,22 +15,13 @@ use borsh::BorshSerialize;
 //extend from default
 pub trait Acc {
     ///return `None` if created acconut following the input account_data instance
-    /// ```rust,no_run
-    /// let (serialized_data, size) = if let Some(max_size) = account_data.get_max_size() {
-    ///     (None, max_size)
-    /// } else {
-    ///     let data = account_data.default().try_to_vec()?;
-    ///     let size = data.len();
-    ///     (Some(data), size)
-    /// };
-    /// ```
     fn get_max_size(&self) -> Option<usize> {
         None
     }
 }
 
 ///Create account whose owner is sol_program
-pub fn create_and_serialize_account<'a, T: BorshSerialize + Acc + Default + PartialEq>(
+pub fn create_and_serialize_account<'a, T: BorshSerialize + Acc + PartialEq>(
     //`lifetime` should be applied to conform to the CPI calling
     account_info: &AccountInfo<'a>,
     account_data: &T,
@@ -44,7 +35,7 @@ pub fn create_and_serialize_account<'a, T: BorshSerialize + Acc + Default + Part
     let (serialized_data, size) = if let Some(max_size) = account_data.get_max_size() {
         (None, max_size)
     } else {
-        let data = T::default().try_to_vec()?;
+        let data = account_data.try_to_vec()?;
         let size = data.len();
         (Some(data), size)
     };
@@ -75,7 +66,7 @@ pub fn create_and_serialize_account<'a, T: BorshSerialize + Acc + Default + Part
 }
 
 ///Create PDA tahat is allowed to repeated calling
-pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + Default + PartialEq>(
+pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + PartialEq>(
     account_info: &AccountInfo<'a>,
     account_data: &T,
     payer_info: &AccountInfo<'a>,
@@ -94,7 +85,7 @@ pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + Default
     let (serialized_data, size) = if let Some(max_size) = account_data.get_max_size() {
         (None, max_size)
     } else {
-        let data = T::default().try_to_vec()?;
+        let data = account_data.try_to_vec()?;
         let size = data.len();
         (Some(data), size)
     };
@@ -148,6 +139,19 @@ pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + Default
     }
 
     msg!("PDA initialized");
+
+    Ok(())
+}
+
+///Check `owner` & `data`
+pub fn assert_created_account_is_valid(account_info: &AccountInfo) -> ProgramResult {
+    if account_info.owner != &crate::id() {
+        return Err(ProgramError::IllegalOwner);
+    }
+
+    if account_info.data_is_empty() {
+        return Err(ProgramError::UninitializedAccount);
+    }
 
     Ok(())
 }

@@ -1,5 +1,8 @@
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
-use solana_program::{program_error::ProgramError, pubkey::Pubkey};
+use solana_program::{
+    account_info::AccountInfo, entrypoint::ProgramResult, program_error::ProgramError,
+    pubkey::Pubkey,
+};
 
 //Account
 use crate::{error::GovError, state::ExchangeRateEntry, utils::account_info::Acc};
@@ -37,5 +40,21 @@ impl Registrar {
             .unwrap();
 
         Ok(convert)
+    }
+
+    ///immutable
+    pub fn check_and_get_registrar(
+        account: &AccountInfo,
+        authority: &AccountInfo,
+    ) -> Result<Registrar, ProgramError> {
+        let registrar = Self::try_from_slice(&account.try_borrow_data()?)?;
+
+        if registrar.authority != *authority.key {
+            let err = GovError::AuthorityMismatch;
+
+            return Err(err.into());
+        }
+
+        Ok(registrar)
     }
 }

@@ -1,3 +1,4 @@
+use crate::utils::account_info::Acc;
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 
@@ -9,11 +10,8 @@ pub struct ExchangeRateEntry {
     pub decimals: u8, // Mint decimals.
 }
 
-impl ExchangeRateEntry {
-    pub fn serialized_size() -> usize {
-        Self::default()
-            .try_to_vec()
-            .expect("seriazlied length: ExchangeRateEntry")
-            .len()
+impl Acc for ExchangeRateEntry {
+    fn get_max_size(&self) -> Option<usize> {
+        Some(32 + 8 + 1)
     }
 }

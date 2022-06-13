@@ -14,11 +14,11 @@ use solana_program::{
 use crate::{
     error::GovError,
     state::{ExchangeRateEntry, Registrar},
+    utils::account_info::assert_created_account_is_valid,
 };
-use std::ops::Not;
-
 use borsh::{BorshDeserialize, BorshSerialize};
 use spl_associated_token_account::instruction as ata_instruction;
+use std::ops::Not;
 
 pub fn process(
     program_id: &Pubkey,
@@ -29,31 +29,22 @@ pub fn process(
 ) -> ProgramResult {
     let account_info_iter = &mut accounts.iter();
 
-    let authority_account = next_account_info(account_info_iter)?;
-    let registrar_account = next_account_info(account_info_iter)?;
-    let deposit_mint_account = next_account_info(account_info_iter)?;
-    let exchange_vault_account = next_account_info(account_info_iter)?;
-    let voting_mint_account = next_account_info(account_info_iter)?;
-    let token_program_account = next_account_info(account_info_iter)?;
-    let _system_program_account = next_account_info(account_info_iter)?;
-    let _associated_token_program_account = next_account_info(account_info_iter)?;
+    let authority_account = next_account_info(account_info_iter)?; //.0
+    let registrar_account = next_account_info(account_info_iter)?; //.1
+    let deposit_mint_account = next_account_info(account_info_iter)?; //.2
+    let exchange_vault_account = next_account_info(account_info_iter)?; //.3
+    let voting_mint_account = next_account_info(account_info_iter)?; //.4
+    let token_program_account = next_account_info(account_info_iter)?; //.5
+    let _system_program_account = next_account_info(account_info_iter)?; //.6
+    let _associated_token_program_account = next_account_info(account_info_iter)?; //.7
 
     if !authority_account.is_signer {
         return Err(ProgramError::MissingRequiredSignature);
     }
 
-    if registrar_account.owner != program_id {
-        return Err(ProgramError::IllegalOwner);
-    }
-    if registrar_account.data_is_empty() {
-        return Err(ProgramError::UninitializedAccount);
-    }
-    let registrar: Registrar = Registrar::try_from_slice(&registrar_account.try_borrow_data()?)?;
-    if registrar.authority != *authority_account.key {
-        let err = GovError::AuthorityMismatch;
-        msg!("{}", err);
-        return Err(err.into());
-    }
+    assert_created_account_is_valid(&registrar_account)?;
+
+    let registrar = Registrar::check_and_get_registrar(registrar_account, authority_account)?;
 
     //build PDA
     //1. exchange_vault(ATA)
