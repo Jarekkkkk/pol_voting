@@ -42,7 +42,6 @@ impl Registrar {
         Ok(convert)
     }
 
-    ///immutable
     pub fn check_and_get_registrar(
         account: &AccountInfo,
         authority: &AccountInfo,

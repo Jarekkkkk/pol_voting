@@ -14,7 +14,6 @@ use solana_program::{
 use crate::{
     error::GovError,
     state::{ExchangeRateEntry, Registrar},
-    utils::account_info::assert_created_account_is_valid,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use spl_associated_token_account::instruction as ata_instruction;
@@ -41,8 +40,6 @@ pub fn process(
     if !authority_account.is_signer {
         return Err(ProgramError::MissingRequiredSignature);
     }
-
-    assert_created_account_is_valid(&registrar_account)?;
 
     let registrar = Registrar::check_and_get_registrar(registrar_account, authority_account)?;
 

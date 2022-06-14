@@ -39,7 +39,7 @@ pub fn process(
         return Err(ProgramError::MissingRequiredSignature);
     }
     //no need of checking authority for it is readonly
-    if registrar_account.data_is_empty() {
+    if registrar_account.data_is_empty() || registrar_account.is_writable {
         return Err(ProgramError::InvalidAccountData.into());
     }
     let registrar: Registrar = Registrar::try_from_slice(&registrar_account.try_borrow_data()?)?;

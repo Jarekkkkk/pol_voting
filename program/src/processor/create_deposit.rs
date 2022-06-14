@@ -117,6 +117,7 @@ pub fn process(
         .position(|i| !i.is_used)
         .ok_or(GovError::DepositEntryFull)?;
     let free_deposit_er = &mut voter.deposits[free_deposit_er_idx];
+
     free_deposit_er.is_used = true;
     free_deposit_er.rate_idx = er_idx as u8;
     //should deposit be set to "0" ?
@@ -129,7 +130,6 @@ pub fn process(
             .unwrap(),
         padding: [0_u8; 16],
     };
-
 
     Ok(())
 }

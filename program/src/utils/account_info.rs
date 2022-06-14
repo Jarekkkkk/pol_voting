@@ -142,16 +142,3 @@ pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + Partial
 
     Ok(())
 }
-
-///Check `owner` & `data`
-pub fn assert_created_account_is_valid(account_info: &AccountInfo) -> ProgramResult {
-    if account_info.owner != &crate::id() {
-        return Err(ProgramError::IllegalOwner);
-    }
-
-    if account_info.data_is_empty() {
-        return Err(ProgramError::UninitializedAccount);
-    }
-
-    Ok(())
-}
