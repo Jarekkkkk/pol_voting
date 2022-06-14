@@ -111,13 +111,6 @@ async fn test() {
         &mint_a.pubkey(),
     );
 
-    // let seeds: &[&[_]] = &[
-    //     &registrar_pda.to_bytes().clone(),
-    //     &spl_token::id().to_bytes().clone(),
-    //     &mint_a.pubkey().to_bytes().clone(),
-    // ];
-    // let (exchange_vault_a_pda, _exchange_vault_a_bump) =
-    //     Pubkey::find_program_address(seeds, &spl_associated_token_account::id());
     let er_a = program::state::ExchangeRateEntry {
         mint: mint_a.pubkey(),
         rate: 1,

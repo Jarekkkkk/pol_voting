@@ -65,17 +65,17 @@ pub fn create_and_serialize_account<'a, T: BorshSerialize + Acc + PartialEq>(
     Ok(())
 }
 
-///Create PDA tahat is allowed to repeated calling
+///Create PDA that sis allowed to repeated calling
 pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + PartialEq>(
     account_info: &AccountInfo<'a>,
     account_data: &T,
     payer_info: &AccountInfo<'a>,
-    program_id: &Pubkey,
+    owner: &Pubkey,
     seeds: &[&[u8]],
 ) -> ProgramResult {
     //verify PDA
 
-    let (pda, bump) = Pubkey::find_program_address(seeds, program_id);
+    let (pda, bump) = Pubkey::find_program_address(seeds, owner);
 
     if pda != *account_info.key {
         //log the message by type of PDA we are goting to create
@@ -109,7 +109,7 @@ pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + Partial
         let ix = system_instruction::allocate(account_info.key, size as u64);
         invoke_signed(&ix, &[account_info.clone()], &[&signer_seeds[..]])?;
 
-        let ix = system_instruction::assign(account_info.key, program_id);
+        let ix = system_instruction::assign(account_info.key, owner);
         invoke_signed(&ix, &[account_info.clone()], &[&signer_seeds[..]])?;
 
         msg!("PDA upgraded");
@@ -119,7 +119,7 @@ pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + Partial
             account_info.key,
             Rent::get()?.minimum_balance(size),
             size as u64,
-            program_id,
+            owner,
         );
 
         invoke_signed(
@@ -129,6 +129,8 @@ pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + Partial
         )?;
         msg!("PDA created")
     }
+
+    // === this should be seperated into 2 function ===, as we want update the state after creating account
 
     if let Some(serialized_data) = serialized_data {
         account_info
