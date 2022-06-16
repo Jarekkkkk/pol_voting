@@ -2023,7 +2023,7 @@ dependencies = [
  "spl-governance",
  "spl-governance-addin-api",
  "spl-token",
- "spl-token-2022 0.4.0",
+ "spl-token-2022 0.3.0",
  "thiserror",
 ]
 
@@ -3655,9 +3655,9 @@ dependencies = [
 
 [[package]]
 name = "spl-token-2022"
-version = "0.4.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d41868a4a2e44a16b18c9b457113cdb8eeeb00d94542385418083935d061a33"
+checksum = "83f001b3579e69a695a22e458fa1a4b76ab25a142544a094e3f65af63dc61c2f"
 dependencies = [
  "arrayref",
  "bytemuck",

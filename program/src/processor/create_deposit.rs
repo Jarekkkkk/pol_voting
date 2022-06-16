@@ -3,7 +3,7 @@ use solana_program::{
     clock::Clock,
     entrypoint::ProgramResult,
     msg,
-    program::{invoke, invoke_signed},
+    program::invoke,
     program_error::ProgramError,
     program_pack::Pack,
     pubkey::Pubkey,
@@ -28,22 +28,21 @@ pub fn process(
 ) -> ProgramResult {
     let account_info_iter = &mut accounts.iter();
 
-    //customized
-    let authority_account = next_account_info(account_info_iter)?;
-    let registrar_account = next_account_info(account_info_iter)?;
-    let voter_account = next_account_info(account_info_iter)?;
-    //mint
-    let deposit_mint_account = next_account_info(account_info_iter)?;
-    let voting_mint_account = next_account_info(account_info_iter)?;
-    //token
-    let deposit_token_account = next_account_info(account_info_iter)?;
-    let exchange_vault_account = next_account_info(account_info_iter)?;
-    let voting_token_account = next_account_info(account_info_iter)?;
-    //program
-    let _system_program_account = next_account_info(account_info_iter)?;
-    let token_program_account = next_account_info(account_info_iter)?;
-    let _associated_token_account = next_account_info(account_info_iter)?;
-    let _rent_account = next_account_info(account_info_iter)?;
+    let authority_account = next_account_info(account_info_iter)?; //.0
+    let registrar_account = next_account_info(account_info_iter)?; //.1
+    let voter_account = next_account_info(account_info_iter)?; //.2
+                                                               //mint
+    let deposit_mint_account = next_account_info(account_info_iter)?; //.3
+    let voting_mint_account = next_account_info(account_info_iter)?; //.4
+                                                                     //token
+    let deposit_token_account = next_account_info(account_info_iter)?; //.5
+    let exchange_vault_account = next_account_info(account_info_iter)?; //.6
+    let voting_token_account = next_account_info(account_info_iter)?; //.7
+                                                                      //program
+    let _system_program_account = next_account_info(account_info_iter)?; //.8
+    let token_program_account = next_account_info(account_info_iter)?; //.9
+    let _associated_token_account = next_account_info(account_info_iter)?; //.10
+    let _rent_account = next_account_info(account_info_iter)?; //.11
 
     if !authority_account.is_signer {
         return Err(ProgramError::MissingRequiredSignature);

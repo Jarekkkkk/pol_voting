@@ -2,12 +2,11 @@ use solana_program::{
     account_info::{next_account_info, AccountInfo},
     entrypoint::ProgramResult,
     msg,
-    program::{invoke, invoke_signed},
+    program::invoke,
     program_error::ProgramError,
     program_pack::Pack,
     pubkey::Pubkey,
     rent::Rent,
-    system_instruction,
     sysvar::Sysvar,
 };
 
@@ -39,21 +38,20 @@ pub fn process(
     let token_program_account = next_account_info(account_info_iter)?; //.5
     let _system_program_account = next_account_info(account_info_iter)?; //.6
     let _associated_token_program_account = next_account_info(account_info_iter)?; //.7
-    let rent_info = next_account_info(account_info_iter)?;
+    let rent_info = next_account_info(account_info_iter)?; //.8
 
     if !authority_account.is_signer {
         return Err(ProgramError::MissingRequiredSignature);
     }
 
-    //only be verified
-    let _registrar = Registrar::check_and_get_registrar(registrar_account, authority_account)?;
+    //Verify
+    let mut registrar =
+        Registrar::check_and_get_mut_registrar(registrar_account, authority_account)?;
 
-    //build PDA
-    //1. exchange_vault(ATA)
+    // Creat exchange_vault as PDA
     if !exchange_vault_account.data_is_empty() {
         Err(ProgramError::AccountAlreadyInitialized)?
     }
-
     invoke(
         &ata_instruction::create_associated_token_account(
             &authority_account.key,
@@ -64,12 +62,12 @@ pub fn process(
     )?;
     msg!("ExchangeVault ATA created");
 
+    // voting_mint PDA
     let seeds: &[&[_]] = &[
         &registrar_account.key.to_bytes(),
         &deposit_mint_account.key.to_bytes(),
     ];
     let deposit_mint = spl_token::state::Mint::unpack(&deposit_mint_account.data.borrow())?;
-
     create_and_initialize_mint(
         authority_account,
         voting_mint_account,
@@ -85,13 +83,10 @@ pub fn process(
     if (er.rate > 0).not() {
         return Err(GovError::InvalidRate.into());
     };
-    let mut registrar_account_data = registrar_account.try_borrow_mut_data()?;
-    //mutable reference after immutable one
-    let mut registrar: Registrar = Registrar::try_from_slice(&registrar_account_data)?;
     registrar.rates[idx as usize] = er;
 
-    //either borsh::serialzie or core::slice::copy from slice
-    registrar.serialize(&mut *registrar_account_data)?;
+    //seriazlie
+    registrar.serialize(&mut *registrar_account.try_borrow_mut_data()?)?;
 
     Ok(())
 }

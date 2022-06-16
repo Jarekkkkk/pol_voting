@@ -10,7 +10,10 @@ use solana_program::{
     sysvar::{rent::Rent, Sysvar},
 };
 
-use crate::state::{DepositEntry, Registrar, Voter};
+use crate::{
+    state::{DepositEntry, Registrar, Voter},
+    utils::account_info::create_and_serialize_account_signed,
+};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use spl_governance_addin_api::voter_weight::VoterWeightRecord;
@@ -38,11 +41,8 @@ pub fn process(
     if !payer_account.is_signer && !authority_account.is_signer {
         return Err(ProgramError::MissingRequiredSignature);
     }
-    //no need of checking authority for it is readonly
-    if registrar_account.data_is_empty() || registrar_account.is_writable {
-        return Err(ProgramError::InvalidAccountData.into());
-    }
-    let registrar: Registrar = Registrar::try_from_slice(&registrar_account.try_borrow_data()?)?;
+
+    let registrar = Registrar::check_and_get_immut_registrar(registrar_account, authority_account)?;
 
     // state
     let new_voter = Voter {
@@ -52,13 +52,31 @@ pub fn process(
         voter_weight_record_bump,
         deposits: [DepositEntry::default(); 10],
     };
-    let new_voter_serialized = new_voter.try_to_vec()?;
-    let new_voter_serialized_len = new_voter_serialized.len();
+    // let new_voter_serialized = new_voter.try_to_vec()?;
+    // let new_voter_serialized_len = new_voter_serialized.len();
+
+    //pda seeds
+    let voter_seeds: &[&[_]] = &[
+        &registrar_account.key.to_bytes(),
+        &authority_account.key.to_bytes(),
+    ];
+
+    //Why below payers are different when creating PDA ??
+    create_and_serialize_account_signed(
+        voter_account,
+        &new_voter,
+        authority_account,
+        program_id,
+        voter_seeds,
+        Some(voter_bump),
+    )?;
+
+    // ------ voter_weight ------
 
     //owner shuold become program_id
-    //discriminator would interact with Anchor program (?)
     let new_voter_weight_record = VoterWeightRecord {
         account_discriminator: VoterWeightRecord::ACCOUNT_DISCRIMINATOR,
+        //does discriminator would interact with Anchor program (?)
         realm: registrar.realm,
         governing_token_mint: registrar.realm_community_mint,
         governing_token_owner: *authority_account.key,
@@ -68,62 +86,21 @@ pub fn process(
         weight_action_target: None,
         reserved: [0; 8],
     };
-    let new_voter_weight_record_serialized = new_voter_weight_record.try_to_vec()?;
-    let new_voter_weight_record_serialized_len = new_voter_weight_record_serialized.len();
 
-    //pda seeds
-    let voter_seeds: &[&[_]] = &[
-        &registrar_account.key.to_bytes(),
-        &authority_account.key.to_bytes(),
-        &[voter_bump],
-    ];
     let voter_weight_record_seeds: &[&[_]] = &[
         VOTER_WEIGHT_RECORD.as_ref(),
         &registrar_account.key.to_bytes(),
         &authority_account.key.to_bytes(),
-        &[voter_weight_record_bump],
     ];
 
-    //ix
-    // Why below payers are different when creating PDA ??
-    let create_voter_ix = system_instruction::create_account(
-        authority_account.key,
-        voter_account.key,
-        Rent::get()?.minimum_balance(new_voter_serialized_len),
-        new_voter_serialized_len as u64,
+    create_and_serialize_account_signed(
+        voter_weight_record_account,
+        &new_voter_weight_record,
+        payer_account,
         program_id,
-    );
-
-    invoke_signed(
-        &create_voter_ix,
-        &[authority_account.clone(), voter_account.clone()],
-        &[voter_seeds],
+        voter_weight_record_seeds,
+        Some(voter_weight_record_bump),
     )?;
-    msg!("Voter PDA created");
-
-    voter_account
-        .try_borrow_mut_data()?
-        .copy_from_slice(&new_voter_serialized);
-    msg!("Voter PDA initialized");
-
-    let create_voter_weight_record_ix = system_instruction::create_account(
-        payer_account.key,
-        voter_weight_record_account.key,
-        Rent::get()?.minimum_balance(new_voter_weight_record_serialized_len),
-        new_voter_weight_record_serialized_len as u64,
-        program_id,
-    );
-    invoke_signed(
-        &create_voter_weight_record_ix,
-        &[payer_account.clone(), voter_weight_record_account.clone()],
-        &[voter_weight_record_seeds],
-    )?;
-    msg!("Voter_weight_record PDA created");
-
-    voter_weight_record_account
-        .try_borrow_mut_data()?
-        .copy_from_slice(&new_voter_weight_record_serialized);
-    msg!("Voter_weight_record PDA initialized");
 
     Ok(())
 }

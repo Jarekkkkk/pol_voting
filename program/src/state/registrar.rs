@@ -42,11 +42,47 @@ impl Registrar {
         Ok(convert)
     }
 
-    pub fn check_and_get_registrar(
+    pub fn check_and_get_mut_registrar(
         account: &AccountInfo,
         authority: &AccountInfo,
     ) -> Result<Registrar, ProgramError> {
+        //dangerous when deref the RefMut
+
+        //{
+        // common verification could be optimized
+        let registrar = Self::try_from_slice(&account.try_borrow_mut_data()?)?;
+
+        if !account.is_writable {
+            return Err(ProgramError::InvalidAccountData);
+        }
+
+        if account.data_is_empty() {
+            return Err(ProgramError::UninitializedAccount);
+        }
+        // }
+
+        if registrar.authority != *authority.key {
+            let err = GovError::AuthorityMismatch;
+
+            return Err(err.into());
+        }
+
+        Ok(registrar)
+    }
+
+    pub fn check_and_get_immut_registrar(
+        account: &AccountInfo,
+        authority: &AccountInfo,
+    ) -> Result<Registrar, ProgramError> {
+        //dangerous when deref the RefMut
         let registrar = Self::try_from_slice(&account.try_borrow_data()?)?;
+
+        if account.is_writable {
+            return Err(ProgramError::InvalidAccountData);
+        }
+        if account.data_is_empty() {
+            return Err(ProgramError::UninitializedAccount);
+        }
 
         if registrar.authority != *authority.key {
             let err = GovError::AuthorityMismatch;

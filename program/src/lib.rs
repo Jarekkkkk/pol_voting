@@ -9,7 +9,7 @@
     clippy::missing_errors_doc,
     clippy::similar_names
 )]
-
+#![allow(unused_variables, unused_imports, dead_code)]
 use solana_program::declare_id;
 
 pub mod entrypoint;
@@ -29,7 +29,7 @@ declare_id!("A8bkizaAC3EePjYJjVSzfsUpKqTGREpyb89eT1FJyrzn");
 mod tests {
     use super::*;
 
-    fn two_ways_serialization() {
+    fn _two_ways_serialization() {
         use borsh::BorshSerialize;
         use state::Registrar;
 

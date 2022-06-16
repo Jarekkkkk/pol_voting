@@ -32,7 +32,7 @@ pub fn process(
         authority: *authority_account.key,
         realm: *realm_account.key,
         realm_community_mint: *realm_community_mint_account.key,
-        bump: registrar_bump.clone(),
+        bump: registrar_bump,
         rates: [ExchangeRateEntry::default(), ExchangeRateEntry::default()],
         rate_decimals,
     };
@@ -45,6 +45,7 @@ pub fn process(
         payer_account,
         program_id,
         seeds,
+        Some(registrar_bump),
     )?;
 
     Ok(())

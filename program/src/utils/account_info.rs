@@ -10,7 +10,7 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-use borsh::BorshSerialize;
+use borsh::{try_from_slice_with_schema, BorshDeserialize, BorshSerialize};
 
 //extend from default
 pub trait Acc {
@@ -65,17 +65,22 @@ pub fn create_and_serialize_account<'a, T: BorshSerialize + Acc + PartialEq>(
     Ok(())
 }
 
-///Create PDA that sis allowed to repeated calling
+///Create PDA whose lamports could be positive
+/// Question: Hot to solve the dynamic vector of AccountInfo for doing CPI
 pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + PartialEq>(
     account_info: &AccountInfo<'a>,
     account_data: &T,
     payer_info: &AccountInfo<'a>,
     owner: &Pubkey,
     seeds: &[&[u8]],
+    bump: Option<u8>, // whether created by custodial bump
 ) -> ProgramResult {
     //verify PDA
-
-    let (pda, bump) = Pubkey::find_program_address(seeds, owner);
+    let (pda, bump) = if let Some(bump) = bump {
+        (*account_info.key, bump)
+    } else {
+        Pubkey::find_program_address(seeds, owner)
+    };
 
     if pda != *account_info.key {
         //log the message by type of PDA we are goting to create
@@ -121,7 +126,6 @@ pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + Partial
             size as u64,
             owner,
         );
-
         invoke_signed(
             &ix,
             &[payer_info.clone(), account_info.clone()],
@@ -141,6 +145,24 @@ pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + Partial
     }
 
     msg!("PDA initialized");
+
+    Ok(())
+}
+
+///readonly account check and seralized
+///
+pub fn assert_and_serialized_readonly<T>(account: &AccountInfo, account_type: &T) -> ProgramResult
+where
+    T: BorshDeserialize,
+{
+    if account.data_is_empty() {
+        return Err(ProgramError::UninitializedAccount);
+    }
+    if account.is_writable {
+        return Err(ProgramError::InvalidAccountData);
+    }
+
+    let serialized_data: T = BorshDeserialize::try_from_slice(&account.try_borrow_data()?)?;
 
     Ok(())
 }

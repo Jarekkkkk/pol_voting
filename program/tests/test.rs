@@ -1,4 +1,5 @@
 //no need of using "solana-test-validator"
+#![allow(unused_variables, unused_imports, dead_code)]
 mod action;
 
 use solana_program_test::*;
