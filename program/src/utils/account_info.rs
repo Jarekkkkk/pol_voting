@@ -18,6 +18,15 @@ pub trait Acc {
     fn get_max_size(&self) -> Option<usize> {
         None
     }
+
+    ///limited to our program, since we have no right to overwritting data on PDA whose owner is other program
+    fn verify_pda(seeds: &[&[u8]], account: &Pubkey) -> ProgramResult {
+        let pda = Pubkey::find_program_address(seeds, &crate::id()).0;
+        if pda != *account {
+            return Err(ProgramError::InvalidSeeds);
+        }
+        Ok(())
+    }
 }
 
 ///Create account whose owner is sol_program

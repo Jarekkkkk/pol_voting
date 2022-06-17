@@ -15,6 +15,7 @@ use spl_token::{error::TokenError, state::Account as Token};
 use crate::{
     error::GovError,
     state::{Lockup, LockupKind, Registrar, Voter, SECS_PER_DAY},
+    utils::account_info::Acc,
 };
 
 use borsh::BorshDeserialize;
@@ -48,22 +49,20 @@ pub fn process(
         return Err(ProgramError::MissingRequiredSignature);
     }
 
+    // either unpack in 1.) fn_main
+    // or 2.) in function
     let registrar: Registrar = Registrar::try_from_slice(&registrar_account.try_borrow_data()?)?;
     let mut voter: Voter = Voter::try_from_slice(&mut voter_account.try_borrow_mut_data()?)?;
-    if voter.authority != *authority_account.key {
-        return Err(GovError::AuthorityMismatch.into());
-    }
-    if voter.registrar != *registrar_account.key {
-        return Err(GovError::RegistrarMismatch.into());
-    }
+
+    voter.assert_voter(authority_account.key, registrar_account.key)?;
+
     let voting_mint_seeds: &[&[_]] = &[
         &registrar_account.key.to_bytes(),
         &deposit_mint_account.key.to_bytes(),
     ];
-    let (voting_mint_pda, _bump) = Pubkey::find_program_address(voting_mint_seeds, program_id);
-    if voting_mint_account.key != &voting_mint_pda {
-        return Err(ProgramError::InvalidSeeds);
-    }
+    Voter::verify_pda(voting_mint_seeds, voting_mint_account.key)?;
+
+    //Token program
     let deposit_token: Token = Token::unpack(&deposit_token_account.try_borrow_data()?)?;
     if deposit_token.mint != *deposit_mint_account.key {
         return Err(TokenError::MintMismatch.into());
@@ -85,13 +84,13 @@ pub fn process(
             spl_associated_token_account::instruction::create_associated_token_account(
                 &authority_account.key,
                 &authority_account.key,
-                &voting_mint_pda,
+                &voting_mint_account.key,
             );
         invoke(&create_voting_token_ix, accounts)?;
         msg!("Voting token ATA created")
     }
     let voting_token = Token::unpack(&voting_token_account.try_borrow_data()?)?;
-    if voting_token.owner != *authority_account.key {
+    if voting_token.owner /* not owner as we defined in program */!= *authority_account.key {
         return Err(TokenError::OwnerMismatch.into());
     }
     if voting_token.mint != *voting_mint_account.key {
