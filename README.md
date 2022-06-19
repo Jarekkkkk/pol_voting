@@ -9,7 +9,21 @@ The concept is still on working and imperfect; however, this shabby model is fun
 
 Full and detailed information is available at my [medium](https://medium.com/@jarekcoding/tokenomic-model-for-saas-platform-89b5828a27ec) articles, it is unsurprising following articles will be released. Stay tuned.
 
- _Note:_ This model is highly inspired by [Spl_program_governance](https://github.com/solana-labs/solana-program-library)   
+ _Note:_ The model is highly inspired by [Spl_program_governance](https://github.com/solana-labs/solana-program-library)   
 <br />
 ![Pages](./docs/images/basic_model.png)
+
+## Workflow
+
+### 1) Create Realm
+
+Done yet. 
+
+### 2) Create Registrar
+
+### 3) Create ExchangeRate ( 2 tokens )
+
+### 4) Create Voter 
+
+### 5) Create deposit 
 

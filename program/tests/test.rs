@@ -1,7 +1,7 @@
 //no need of using "solana-test-validator"
 #![allow(unused_variables, unused_imports, dead_code)]
 mod action;
-
+mod spl_token_action;
 use solana_program_test::*;
 
 use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer, transaction::Transaction};
@@ -40,7 +40,7 @@ async fn test() {
     let _rent = banks_client.get_rent().await.unwrap();
 
     // ------ Mint & Vault ------
-    action::create_token_and_mint(
+    spl_token_action::create_token_and_mint(
         &mut banks_client,
         &payer,
         recent_blockhash,
@@ -51,11 +51,11 @@ async fn test() {
     )
     .await
     .unwrap();
-    action::create_token_and_mint(
+    spl_token_action::create_token_and_mint(
         &mut banks_client,
         &payer,
         recent_blockhash,
-        &program::id(),
+        &payer.pubkey(),
         &mint_b,
         0,
         &vault_b,
@@ -191,6 +191,20 @@ async fn test() {
         &payer.pubkey(),
         &voting_mint_a_pda,
     );
+    // - mint token to votet's ATA
+    spl_token_action::mint(
+        &mut banks_client,
+        &payer,
+        recent_blockhash,
+        &mint_a.pubkey(),
+        &vault_a.pubkey(),
+        &payer,
+        100,
+    )
+    .await
+    .expect("mint tests");
+
+    //voter's PDA is valid after create_ix in create_deposit
     action::create_deposit(
         &mut banks_client,
         &payer,
@@ -208,22 +222,4 @@ async fn test() {
     )
     .await
     .unwrap();
-    // ix has been seperated to prevent exceed heap storage
-    // trying to test combined ix (create_deposit + update_deposit )  again after minimizing codes
-    // action::update_deposit(
-    //     &mut banks_client,
-    //     &payer,
-    //     recent_blockhash,
-    //     &registrar_pda,
-    //     &voter_pda,
-    //     &mint_a.pubkey(),
-    //     &voting_mint_a_pda,
-    //     &vault_a.pubkey(),
-    //     &exchange_vault_a_pda,
-    //     &voting_token_pda,
-    //     0,
-    //     10,
-    // )
-    // .await
-    // .unwrap()
 }

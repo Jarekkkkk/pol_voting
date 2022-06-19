@@ -52,8 +52,6 @@ pub fn process(
         voter_weight_record_bump,
         deposits: [DepositEntry::default(); 10],
     };
-    // let new_voter_serialized = new_voter.try_to_vec()?;
-    // let new_voter_serialized_len = new_voter_serialized.len();
 
     //pda seeds
     let voter_seeds: &[&[_]] = &[

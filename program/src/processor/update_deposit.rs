@@ -15,6 +15,7 @@ use spl_token::{error::TokenError, state::Account as Token};
 use crate::{
     error::GovError,
     state::{Lockup, LockupKind, Registrar, Voter, SECS_PER_DAY},
+    utils::spl_token as spl_token_util,
 };
 
 use borsh::BorshDeserialize;
@@ -28,25 +29,25 @@ pub fn process(
     let account_info_iter = &mut accounts.iter();
 
     //customized
-    let authority_account = next_account_info(account_info_iter)?;
-    let registrar_account = next_account_info(account_info_iter)?;
+    let authority_info = next_account_info(account_info_iter)?;
+    let registrar_info = next_account_info(account_info_iter)?;
     let voter_account = next_account_info(account_info_iter)?;
     //mint
-    let deposit_mint_account = next_account_info(account_info_iter)?;
-    let voting_mint_account = next_account_info(account_info_iter)?;
+    let deposit_mint_info = next_account_info(account_info_iter)?;
+    let voting_mint_info = next_account_info(account_info_iter)?;
     //token
-    let deposit_token_account = next_account_info(account_info_iter)?;
-    let exchange_vault_account = next_account_info(account_info_iter)?;
-    let voting_token_account = next_account_info(account_info_iter)?;
+    let deposit_token_info = next_account_info(account_info_iter)?;
+    let exchange_vault_info = next_account_info(account_info_iter)?;
+    let voting_token_info = next_account_info(account_info_iter)?;
     //program
-    let _system_program_account = next_account_info(account_info_iter)?;
-    let token_program_account = next_account_info(account_info_iter)?;
-    // let _associated_token_account = next_account_info(account_info_iter)?;
-    // let _rent_account = next_account_info(account_info_iter)?;
+    let system_program_info = next_account_info(account_info_iter)?;
+    let token_program_info = next_account_info(account_info_iter)?;
+    let _associated_token_info = next_account_info(account_info_iter)?;
+    let _rent_info = next_account_info(account_info_iter)?;
 
     //unpack
-    let voting_token = Token::unpack(&voting_token_account.try_borrow_data()?)?;
-    let registrar: Registrar = Registrar::try_from_slice(&registrar_account.try_borrow_data()?)?;
+    let voting_token = Token::unpack(&voting_token_info.try_borrow_data()?)?;
+    let registrar: Registrar = Registrar::try_from_slice(&registrar_info.try_borrow_data()?)?;
     let mut voter: Voter = Voter::try_from_slice(&mut voter_account.try_borrow_mut_data()?)?;
 
     // update deposit_er in voter
@@ -54,7 +55,7 @@ pub fn process(
         let er_idx = registrar
             .rates
             .iter()
-            .position(|i| i.mint == *deposit_mint_account.key)
+            .position(|i| i.mint == *deposit_mint_info.key)
             .ok_or(GovError::ExchangeRateEntryNotFound)?;
 
         let er = registrar.rates[er_idx];
@@ -68,90 +69,28 @@ pub fn process(
     d_er.amount_deposited += amount; //pure deposit
     d_er.amount_deposited += amount_scaled;
 
-    //ix
-    let transfer_ix = spl_token::instruction::transfer(
-        &spl_token::id(),
-        deposit_token_account.key,
-        exchange_vault_account.key,
-        authority_account.key,
-        &[&authority_account.key],
+    //transfer token A from {voter} to {exchange_vault}
+    spl_token_util::transfer_spl_token(
+        deposit_token_info,
+        exchange_vault_info,
+        authority_info,
         amount,
+        token_program_info,
     )?;
 
-    msg!("transfer ix created");
-    invoke(
-        &transfer_ix,
-        &[
-            token_program_account.clone(),
-            deposit_token_account.clone(),
-            exchange_vault_account.clone(),
-            authority_account.clone(),
-        ],
-    )?;
-    msg!("transfer into exchange vault");
-
-    // thawn the voting_token account if it is frozen by the authority of `registrar`
-    // When will the account be frozen ???
-    if voting_token.is_frozen() {
-        let thaw_ix = spl_token::instruction::thaw_account(
-            &spl_token::id(),
-            voting_token_account.key,
-            voting_mint_account.key,
-            registrar_account.key,
-            &[registrar_account.key],
-        )?;
-        invoke_signed(
-            &thaw_ix,
-            &[
-                token_program_account.clone(),
-                voting_token_account.clone(),
-                voting_mint_account.clone(),
-                registrar_account.clone(),
-            ],
-            &[&[registrar.realm.as_ref(), &[registrar.bump]]],
-        )?;
-        msg!("thaw voting token account");
-    }
-
-    // mint the voting_token to depositor
-    let mint_ix = spl_token::instruction::mint_to(
-        &spl_token::id(),
-        voting_mint_account.key,
-        voting_token_account.key,
-        registrar_account.key,
-        &[registrar_account.key],
+    //mint governance token
+    msg!("mint voting tokne");
+    let seeds: &[&[_]] = &[&registrar.realm.to_bytes()];
+    spl_token_util::mint_token_signed(
+        voting_token_info,
+        voting_mint_info,
+        registrar_info,
+        seeds,
+        registrar.bump,
         amount,
+        token_program_info,
+        "voting_token",
     )?;
-    invoke_signed(
-        &mint_ix,
-        &[
-            token_program_account.clone(),
-            voting_token_account.clone(),
-            voting_mint_account.clone(),
-            registrar_account.clone(),
-        ],
-        &[&[registrar.realm.as_ref(), &[registrar.bump]]],
-    )?;
-    msg!("mint '{}' voting token account", &amount);
 
-    //frozen the voting_token
-    let freeze_ix = spl_token::instruction::freeze_account(
-        &spl_token::id(),
-        voting_token_account.key,
-        voting_mint_account.key,
-        registrar_account.key,
-        &[registrar_account.key],
-    )?;
-    invoke_signed(
-        &freeze_ix,
-        &[
-            token_program_account.clone(),
-            voting_token_account.clone(),
-            voting_mint_account.clone(),
-            registrar_account.clone(),
-        ],
-        &[&[registrar.realm.as_ref(), &[registrar.bump]]],
-    )?;
-    msg!("freeze voting token account");
     Ok(())
 }

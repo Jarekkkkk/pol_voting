@@ -73,7 +73,7 @@ pub fn process(
         voting_mint_account,
         seeds,
         voting_mint_bump,
-        deposit_mint_account.key,
+        registrar_account.key,
         deposit_mint.decimals,
         token_program_account,
         rent_info,
