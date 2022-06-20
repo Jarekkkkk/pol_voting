@@ -62,12 +62,13 @@ pub fn process(
         registrar.convert(&er, amount)?
     };
 
+    //be put into impl Voter
     if !(voter.deposits.len() > update_idx as usize) {
         return Err(GovError::InvalidDepositId.into());
     }
     let d_er = &mut voter.deposits[update_idx as usize];
     d_er.amount_deposited += amount; //pure deposit
-    d_er.amount_deposited += amount_scaled;
+    d_er.amount_scaled += amount_scaled;
 
     //transfer token A from {voter} to {exchange_vault}
     spl_token_util::transfer_spl_token(

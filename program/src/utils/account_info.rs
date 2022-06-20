@@ -12,7 +12,9 @@ use solana_program::{
 
 use borsh::{try_from_slice_with_schema, BorshDeserialize, BorshSerialize};
 
-//extend from default
+//extend the initialize trait that could be seperated from Default value
+// Default -> Invalid Value
+// Initialzied -> Valid Pattern but wihtout any further modification
 pub trait Acc {
     ///return `None` if created acconut following the input account_data instance
     fn get_max_size(&self) -> Option<usize> {

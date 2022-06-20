@@ -6,7 +6,7 @@ use solana_program_test::*;
 
 use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer, transaction::Transaction};
 
-use program::entrypoint::process_instruction;
+use program::{entrypoint::process_instruction, state};
 
 #[tokio::test]
 
@@ -205,6 +205,7 @@ async fn test() {
     .expect("mint tests");
 
     //voter's PDA is valid after create_ix in create_deposit
+    let amount = 10;
     action::create_deposit(
         &mut banks_client,
         &payer,
@@ -217,9 +218,43 @@ async fn test() {
         &exchange_vault_a_pda,
         &voting_token_pda,
         program::state::LockupKind::Cliff,
-        10,
+        amount,
         2,
     )
     .await
     .unwrap();
+
+    // ------- Assert_deposit -------
+
+    let voter: state::Voter = banks_client
+        .get_account_data_with_borsh(voter_pda)
+        .await
+        .unwrap();
+
+    let idx = if let Some(idx) = voter.deposits.iter().position(|i| i.is_used == false) {
+        if idx >= 1 {
+            idx - 1
+        } else {
+            panic!("equals to 0")
+        }
+    } else {
+        panic!("find updated deposit");
+    };
+
+    let registrar: state::Registrar = banks_client
+        .get_account_data_with_borsh(registrar_pda)
+        .await
+        .unwrap();
+
+    let deposit_er = voter.deposits[idx];
+    let exchange_er = registrar.rates[deposit_er.rate_idx as usize];
+
+    print!("create_deposit");
+    assert_eq!(deposit_er.rate_idx, 0);
+    assert_eq!(deposit_er.is_used, true);
+    assert_eq!(deposit_er.amount_withdrawn, 0);
+
+    print!("update_deposit");
+    let convert_q = registrar.convert(&exchange_er, amount).unwrap();
+    assert_eq!(deposit_er.amount_deposited, convert_q);
 }
