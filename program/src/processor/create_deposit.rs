@@ -18,7 +18,7 @@ use crate::{
     utils::account_info::Acc,
 };
 
-use borsh::BorshDeserialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 
 pub fn process(
     program_id: &Pubkey,
@@ -27,7 +27,7 @@ pub fn process(
     amount: u64,
     days: i32,
 ) -> ProgramResult {
-    let deposit_idx = {
+    let update_idx = {
         let account_info_iter = &mut accounts.iter();
 
         let authority_account = next_account_info(account_info_iter)?; //.0
@@ -62,6 +62,7 @@ pub fn process(
             &registrar_account.key.to_bytes(),
             &deposit_mint_account.key.to_bytes(),
         ];
+        //be moved out of trait
         Voter::verify_pda(voting_mint_seeds, voting_mint_account.key)?;
 
         //Token program
@@ -120,6 +121,7 @@ pub fn process(
         let free_deposit_er = &mut voter.deposits[free_deposit_er_idx];
 
         free_deposit_er.is_used = true;
+
         free_deposit_er.rate_idx = er_idx as u8;
         //should deposit be set to "0" ?
         free_deposit_er.amount_withdrawn = 0;
@@ -131,16 +133,19 @@ pub fn process(
                 .unwrap(),
             padding: [0_u8; 16],
         };
+
+        //serialize
+        voter.serialize(&mut *voter_account.try_borrow_mut_data()?)?;
+
         free_deposit_er_idx as u8
     };
     //shorten the heap size
 
-    crate::processor::update_deposit::process(program_id, accounts, deposit_idx, amount)?;
+    crate::processor::update_deposit::process(program_id, accounts, update_idx, amount)?;
 
     Ok(())
 }
 
-
-//check payer::voting_token(ATA) has created 
+//check payer::voting_token(ATA) has created
 // update deposit
 // transfer from {god_a} to {exchange_vault}

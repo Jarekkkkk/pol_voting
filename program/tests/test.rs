@@ -230,16 +230,14 @@ async fn test() {
         .get_account_data_with_borsh(voter_pda)
         .await
         .unwrap();
+    println!("Voter{:?}", &voter);
 
-    let idx = if let Some(idx) = voter.deposits.iter().position(|i| i.is_used == false) {
-        if idx >= 1 {
-            idx - 1
-        } else {
-            panic!("equals to 0")
-        }
+    let idx = if let Some(idx) = voter.deposits.iter().position(|i| i.is_used == true) {
+        idx
     } else {
         panic!("find updated deposit");
     };
+    assert_eq!(idx, 0);
 
     let registrar: state::Registrar = banks_client
         .get_account_data_with_borsh(registrar_pda)
@@ -256,5 +254,6 @@ async fn test() {
 
     print!("update_deposit");
     let convert_q = registrar.convert(&exchange_er, amount).unwrap();
-    assert_eq!(deposit_er.amount_deposited, convert_q);
+    assert_eq!(deposit_er.amount_deposited, convert_q)
+                ;
 }
