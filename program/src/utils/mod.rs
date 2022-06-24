@@ -1,2 +1,2 @@
-pub mod account_info;
-pub mod spl_token;
+pub mod account_info_util;
+pub mod spl_token_util;

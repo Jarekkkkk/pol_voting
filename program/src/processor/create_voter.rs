@@ -12,7 +12,7 @@ use solana_program::{
 
 use crate::{
     state::{DepositEntry, Registrar, Voter},
-    utils::account_info::create_and_serialize_account_signed,
+    utils::account_info_util::create_and_serialize_account_signed,
 };
 
 use borsh::{BorshDeserialize, BorshSerialize};

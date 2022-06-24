@@ -252,7 +252,7 @@ pub fn update_deposit(
         AccountMeta::new_readonly(*registrar_pda, false),
         AccountMeta::new(*voter, false),
         AccountMeta::new_readonly(*deposit_mint, false),
-        AccountMeta::new_readonly(*voting_mint_pda, false),
+        AccountMeta::new(*voting_mint_pda, false),
         AccountMeta::new(*deposit_token, false),
         AccountMeta::new(*exchange_vault_pda, false),
         //PDA be created

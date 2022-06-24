@@ -2,7 +2,7 @@ use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 
 use solana_program::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
 
-use crate::{error::GovError, state::DepositEntry, utils::account_info::Acc};
+use crate::{error::GovError, state::DepositEntry, utils::account_info_util::Acc};
 
 use spl_governance_addin_api::voter_weight::VoterWeightRecord;
 

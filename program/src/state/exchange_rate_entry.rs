@@ -1,4 +1,4 @@
-use crate::utils::account_info::Acc;
+use crate::utils::account_info_util::Acc;
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use solana_program::pubkey::Pubkey;
 

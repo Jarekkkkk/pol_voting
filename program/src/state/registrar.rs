@@ -5,7 +5,7 @@ use solana_program::{
 };
 
 //Account
-use crate::{error::GovError, state::ExchangeRateEntry, utils::account_info::Acc};
+use crate::{error::GovError, state::ExchangeRateEntry, utils::account_info_util::Acc};
 
 //exchange rate for an asset that can mint the voting rights
 #[derive(Debug, BorshDeserialize, BorshSchema, BorshSerialize, Default, Copy, Clone, PartialEq)]

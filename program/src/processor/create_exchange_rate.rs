@@ -10,7 +10,7 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-use crate::utils::spl_token::create_and_initialize_mint;
+use crate::utils::spl_token_util::create_and_initialize_mint;
 use crate::{
     error::GovError,
     state::{ExchangeRateEntry, Registrar},

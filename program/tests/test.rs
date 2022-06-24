@@ -204,7 +204,9 @@ async fn test() {
     .await
     .expect("mint tests");
 
-    //voter's PDA is valid after create_ix in create_deposit
+    // ------- Assert_deposit -------
+
+    //voter's PDA is only valid after create_ix in create_deposit
     let amount = 10;
     action::create_deposit(
         &mut banks_client,
@@ -224,20 +226,17 @@ async fn test() {
     .await
     .unwrap();
 
-    // ------- Assert_deposit -------
-
     let voter: state::Voter = banks_client
         .get_account_data_with_borsh(voter_pda)
         .await
         .unwrap();
-    println!("Voter{:?}", &voter);
 
+    //update logic
     let idx = if let Some(idx) = voter.deposits.iter().position(|i| i.is_used == true) {
         idx
     } else {
         panic!("find updated deposit");
     };
-    assert_eq!(idx, 0);
 
     let registrar: state::Registrar = banks_client
         .get_account_data_with_borsh(registrar_pda)
@@ -247,13 +246,46 @@ async fn test() {
     let deposit_er = voter.deposits[idx];
     let exchange_er = registrar.rates[deposit_er.rate_idx as usize];
 
-    print!("create_deposit");
     assert_eq!(deposit_er.rate_idx, 0);
     assert_eq!(deposit_er.is_used, true);
     assert_eq!(deposit_er.amount_withdrawn, 0);
+    assert_eq!(deposit_er.amount_deposited, 10);
 
-    print!("update_deposit");
     let convert_q = registrar.convert(&exchange_er, amount).unwrap();
-    assert_eq!(deposit_er.amount_deposited, convert_q)
-                ;
+    assert_eq!(deposit_er.amount_scaled, convert_q);
+
+    // ------ update deposit ------
+    let update_idx = 0;
+    let amount = 10;
+
+    let before_deposit = deposit_er.amount_deposited;
+    let before_scaled_deposit = deposit_er.amount_scaled;
+    action::update_deposit(
+        &mut banks_client,
+        &payer,
+        recent_blockhash,
+        &registrar_pda,
+        &voter_pda,
+        &mint_a.pubkey(),
+        &voting_mint_a_pda,
+        &vault_a.pubkey(),
+        &exchange_vault_a_pda,
+        &voting_token_pda,
+        update_idx,
+        amount,
+    )
+    .await
+    .expect("update_deposit");
+
+    let voter: state::Voter = banks_client
+        .get_account_data_with_borsh(voter_pda)
+        .await
+        .unwrap();
+
+    let convert_q = registrar.convert(&exchange_er, amount).unwrap();
+
+    let d_er = voter.deposits[update_idx as usize];
+
+    assert_eq!(d_er.amount_deposited, before_deposit + amount);
+    assert_eq!(d_er.amount_scaled, before_scaled_deposit + convert_q);
 }

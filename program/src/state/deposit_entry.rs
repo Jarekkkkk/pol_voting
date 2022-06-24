@@ -1,6 +1,12 @@
-use crate::state::Lockup;
+use std::cell::{Ref, RefMut};
+
+use crate::{
+    error::GovError,
+    state::{Lockup, Registrar, Voter},
+};
 
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
+use solana_program::{account_info::AccountInfo, entrypoint::ProgramResult, msg};
 
 /// Bookkeeping for a single deposit for a given mint and lockup schedule.
 #[derive(BorshDeserialize, BorshSerialize, PartialEq, BorshSchema, Default, Copy, Clone, Debug)]
@@ -22,4 +28,42 @@ pub struct DepositEntry {
 
     // Locked state.
     pub lockup: Lockup,
+}
+
+//could be optimized by RefMut (?)
+impl DepositEntry {
+    pub fn update_deposit(
+        voter: &mut Voter, //to access the struct state
+        registrar: &Registrar,
+        update_idx: u8,
+        amount: u64,
+        voter_info: &AccountInfo,
+        deposit_mint: &AccountInfo,
+    ) -> ProgramResult {
+        let amount_scaled = {
+            let er_idx = registrar
+                .rates
+                .iter()
+                .position(|i| i.mint == *deposit_mint.key)
+                .ok_or(GovError::ExchangeRateEntryNotFound)?;
+            let er = registrar.rates[er_idx];
+            registrar.convert(&er, amount)?
+        };
+        //verify
+        if !(voter.deposits.len() > update_idx as usize) {
+            return Err(GovError::InvalidDepositId.into());
+        }
+
+        //logic
+        let mut d_er = &mut voter.deposits[update_idx as usize];
+        d_er.amount_deposited += amount;
+        d_er.amount_scaled += amount_scaled;
+
+        msg!("d_er{:?}", d_er);
+
+        //serialize
+        voter.serialize(&mut *voter_info.try_borrow_mut_data()?)?;
+
+        Ok(())
+    }
 }

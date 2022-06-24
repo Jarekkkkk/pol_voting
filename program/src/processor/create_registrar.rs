@@ -7,7 +7,7 @@ use solana_program::{
 
 use crate::{
     state::{ExchangeRateEntry, Registrar},
-    utils::account_info::create_and_serialize_account_signed,
+    utils::account_info_util::create_and_serialize_account_signed,
 };
 pub fn process(
     program_id: &Pubkey,

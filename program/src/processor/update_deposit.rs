@@ -16,8 +16,8 @@ use borsh::{BorshDeserialize, BorshSerialize};
 
 use crate::{
     error::GovError,
-    state::{Lockup, LockupKind, Registrar, Voter, SECS_PER_DAY},
-    utils::spl_token as spl_token_util,
+    state::{DepositEntry, Lockup, LockupKind, Registrar, Voter, SECS_PER_DAY},
+    utils::spl_token_util,
 };
 
 pub fn process(
@@ -46,34 +46,19 @@ pub fn process(
     let _rent_info = next_account_info(account_info_iter)?;
 
     //unpack
-    let voting_token = Token::unpack(&voting_token_info.try_borrow_data()?)?;
 
     let registrar: Registrar = Registrar::try_from_slice(&registrar_info.try_borrow_data()?)?;
     msg!("Unable to deseriazlie");
     let mut voter: Voter = Voter::try_from_slice(&voter_info.try_borrow_mut_data()?)?;
 
-    // update deposit_er in voter
-    let amount_scaled = {
-        let er_idx = registrar
-            .rates
-            .iter()
-            .position(|i| i.mint == *deposit_mint_info.key)
-            .ok_or(GovError::ExchangeRateEntryNotFound)?;
-
-        let er = registrar.rates[er_idx];
-        registrar.convert(&er, amount)?
-    };
-    //here
-
-    //be put into impl Voter
-    if !(voter.deposits.len() > update_idx as usize) {
-        return Err(GovError::InvalidDepositId.into());
-    }
-
-    msg!("foo");
-    let d_er = &mut voter.deposits[update_idx as usize];
-    d_er.amount_deposited += amount; //pure deposit
-    d_er.amount_scaled += amount_scaled;
+    DepositEntry::update_deposit(
+        &mut voter,
+        &registrar,
+        update_idx,
+        amount,
+        voter_info,
+        deposit_mint_info,
+    )?;
 
     //transfer token A from {voter} to {exchange_vault}
     spl_token_util::transfer_spl_token(
@@ -98,8 +83,7 @@ pub fn process(
     )?;
     //serialzie
     //unable to revoke another function
-    voter.serialize(&mut *voter_info.try_borrow_mut_data()?)?;
+    //voter.serialize(&mut *voter_info.try_borrow_mut_data()?)?;
 
-    //this impossible to revoke another ix
     Ok(())
 }
