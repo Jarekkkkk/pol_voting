@@ -29,4 +29,19 @@ impl Voter {
 
         Ok(())
     }
+
+    pub fn get_voter_seeds<'a>(registrar: &'a Pubkey, authority: &'a Pubkey) -> [&'a [u8]; 2] {
+        [registrar.as_ref(), authority.as_ref()]
+    }
+    pub fn get_voter_weight_seeds<'a>(
+        registrar: &'a Pubkey,
+        authority: &'a Pubkey,
+    ) -> [&'a [u8]; 3] {
+        const VOTER_WEIGHT_RECORD: [u8; 19] = *b"voter-weight-record";
+        [
+            VOTER_WEIGHT_RECORD.as_ref(),
+            registrar.as_ref(),
+            authority.as_ref(),
+        ]
+    }
 }

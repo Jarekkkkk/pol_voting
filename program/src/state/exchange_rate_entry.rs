@@ -15,3 +15,12 @@ impl Acc for ExchangeRateEntry {
         Some(32 + 8 + 1)
     }
 }
+
+impl ExchangeRateEntry {
+    pub fn get_voting_mint_seeds<'a>(
+        registrar: &'a Pubkey,
+        deposit_mint: &'a Pubkey,
+    ) -> [&'a [u8]; 2] {
+        [registrar.as_ref(), deposit_mint.as_ref()]
+    }
+}

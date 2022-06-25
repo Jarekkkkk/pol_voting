@@ -23,6 +23,9 @@ pub struct Registrar {
 impl Acc for Registrar {}
 
 impl Registrar {
+    pub fn get_seeds<'a>(realm: &'a Pubkey) -> [&'a [u8]; 1] {
+        [realm.as_ref()]
+    }
     //convert the given amount into community-based currency
     //update both
     //  1: exchagne rate conversion

@@ -76,7 +76,7 @@ pub fn create_and_serialize_account<'a, T: BorshSerialize + Acc + PartialEq>(
     Ok(())
 }
 
-///Create PDA whose lamports could be positive
+///Create PDA whose lamports might be positive
 /// Question: Hot to solve the dynamic vector of AccountInfo for doing CPI
 pub fn create_and_serialize_account_signed<'a, T: BorshSerialize + Acc + PartialEq>(
     account_info: &AccountInfo<'a>,

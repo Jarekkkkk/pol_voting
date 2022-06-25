@@ -10,13 +10,14 @@ use solana_program::{
     sysvar::Sysvar,
 };
 
-use crate::utils::spl_token_util::create_and_initialize_mint;
 use crate::{
     error::GovError,
     state::{ExchangeRateEntry, Registrar},
+    utils::spl_token_util,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use spl_associated_token_account::instruction as ata_instruction;
+
 use std::ops::Not;
 
 use spl_token::state::Mint;
@@ -26,7 +27,7 @@ pub fn process(
     accounts: &[AccountInfo],
     voting_mint_bump: u8,
     idx: u16,
-    er: ExchangeRateEntry, // use new_with_borsh to create ix by seriazling the obj with borsh
+    er: ExchangeRateEntry,
 ) -> ProgramResult {
     let account_info_iter = &mut accounts.iter();
 
@@ -60,18 +61,16 @@ pub fn process(
         ),
         accounts,
     )?;
-    msg!("ExchangeVault ATA created");
+    msg!("ExchangeVault for '{:?}' created", deposit_mint_account.key);
 
-    // voting_mint PDA
-    let seeds: &[&[_]] = &[
-        &registrar_account.key.to_bytes(),
-        &deposit_mint_account.key.to_bytes(),
-    ];
+    let seeds =
+        ExchangeRateEntry::get_voting_mint_seeds(registrar_account.key, deposit_mint_account.key);
     let deposit_mint = spl_token::state::Mint::unpack(&deposit_mint_account.data.borrow())?;
-    create_and_initialize_mint(
+
+    spl_token_util::create_and_initialize_mint(
         authority_account,
         voting_mint_account,
-        seeds,
+        &seeds,
         voting_mint_bump,
         registrar_account.key,
         deposit_mint.decimals,

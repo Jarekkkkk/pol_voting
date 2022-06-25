@@ -37,14 +37,14 @@ pub fn process(
         rate_decimals,
     };
 
-    let seeds: &[&[_]] = &[&realm_account.key.to_bytes()];
+    let seeds = Registrar::get_seeds(realm_account.key);
 
     create_and_serialize_account_signed(
         registrar_account,
         &new_registrar,
         payer_account,
         program_id,
-        seeds,
+        &seeds,
         Some(registrar_bump),
     )?;
 

@@ -81,9 +81,6 @@ pub fn process(
         token_program_info,
         "voting_token",
     )?;
-    //serialzie
-    //unable to revoke another function
-    //voter.serialize(&mut *voter_info.try_borrow_mut_data()?)?;
 
     Ok(())
 }

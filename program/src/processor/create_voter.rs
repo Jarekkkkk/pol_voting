@@ -53,11 +53,7 @@ pub fn process(
         deposits: [DepositEntry::default(); 10],
     };
 
-    //pda seeds
-    let voter_seeds: &[&[_]] = &[
-        &registrar_account.key.to_bytes(),
-        &authority_account.key.to_bytes(),
-    ];
+    let seeds = Voter::get_voter_seeds(registrar_account.key, authority_account.key);
 
     //Why below payers are different when creating PDA ??
     create_and_serialize_account_signed(
@@ -65,13 +61,11 @@ pub fn process(
         &new_voter,
         authority_account,
         program_id,
-        voter_seeds,
+        &seeds,
         Some(voter_bump),
     )?;
 
     // ------ voter_weight ------
-
-    //owner shuold become program_id
     let new_voter_weight_record = VoterWeightRecord {
         account_discriminator: VoterWeightRecord::ACCOUNT_DISCRIMINATOR,
         //does discriminator would interact with Anchor program (?)
@@ -85,18 +79,15 @@ pub fn process(
         reserved: [0; 8],
     };
 
-    let voter_weight_record_seeds: &[&[_]] = &[
-        VOTER_WEIGHT_RECORD.as_ref(),
-        &registrar_account.key.to_bytes(),
-        &authority_account.key.to_bytes(),
-    ];
+    let voter_weight_record_seeds =
+        Voter::get_voter_weight_seeds(registrar_account.key, authority_account.key);
 
     create_and_serialize_account_signed(
         voter_weight_record_account,
         &new_voter_weight_record,
         payer_account,
-        program_id,
-        voter_weight_record_seeds,
+        program_id, // owner should be governance program
+        &voter_weight_record_seeds,
         Some(voter_weight_record_bump),
     )?;
 
