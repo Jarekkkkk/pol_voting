@@ -60,7 +60,6 @@ pub fn process(
         &registrar_account.key.to_bytes(),
         &deposit_mint_account.key.to_bytes(),
     ];
-    //be moved out of trait
     Voter::verify_pda(voting_mint_seeds, voting_mint_account.key)?;
 
     //Token program

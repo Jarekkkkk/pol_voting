@@ -15,6 +15,7 @@ use solana_program::declare_id;
 pub mod entrypoint;
 mod error;
 pub mod instruction;
+pub mod oracle;
 pub mod processor;
 pub mod state;
 pub mod utils;
